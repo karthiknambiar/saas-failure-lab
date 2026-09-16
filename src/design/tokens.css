@@ -14,6 +14,19 @@
   --color-border: #2a3d50;
   --color-border-strong: #466078;
   --color-focus: #f7cf7e;
+  --color-surface-glass: rgb(15 28 42 / 88%);
+  --color-header-glass: rgb(9 19 31 / 88%);
+  --color-header-border: rgb(42 61 80 / 78%);
+  --color-accent-soft: rgb(100 211 201 / 16%);
+  --color-accent-subtle: rgb(100 211 201 / 12%);
+  --background-page:
+    radial-gradient(circle at 14% 5%, rgb(34 105 113 / 26%), transparent 34rem),
+    var(--color-background);
+  --background-contribution: linear-gradient(
+    115deg,
+    rgb(100 211 201 / 10%),
+    transparent 55%
+  );
   --shadow-raised: 0 1.5rem 5rem rgb(0 0 0 / 28%);
   --radius-small: 0.45rem;
   --radius-medium: 0.8rem;

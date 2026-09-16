@@ -13,9 +13,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  background:
-    radial-gradient(circle at 14% 5%, rgb(34 105 113 / 26%), transparent 34rem),
-    var(--color-background);
+  background: var(--background-page);
   color: var(--color-text);
   font-family:
     Inter,
@@ -126,7 +124,7 @@ h3 {
 .evidence-panel {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-medium);
-  background: rgb(15 28 42 / 88%);
+  background: var(--color-surface-glass);
 }
 
 .card {
@@ -151,7 +149,7 @@ h3 {
 }
 
 .badge--accent {
-  background: rgb(100 211 201 / 16%);
+  background: var(--color-accent-soft);
   color: var(--color-accent-strong);
 }
 
@@ -208,8 +206,8 @@ h3 {
 }
 
 .site-header {
-  border-bottom: 1px solid rgb(42 61 80 / 78%);
-  background: rgb(9 19 31 / 88%);
+  border-bottom: 1px solid var(--color-header-border);
+  background: var(--color-header-glass);
   backdrop-filter: blur(1rem);
 }
 
@@ -277,7 +275,7 @@ h3 {
 
 .desktop-navigation a[aria-current='page'],
 .mobile-navigation__links a[aria-current='page'] {
-  background: rgb(100 211 201 / 12%);
+  background: var(--color-accent-subtle);
   color: var(--color-accent-strong);
 }
 
@@ -466,7 +464,7 @@ main {
   padding-inline: clamp(1.5rem, 4vw, 3rem);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-large);
-  background: linear-gradient(115deg, rgb(100 211 201 / 10%), transparent 55%);
+  background: var(--background-contribution);
 }
 
 .contribution-panel h2 {
@@ -476,6 +474,10 @@ main {
 .contribution-panel p:last-child {
   max-width: var(--reading-width);
   margin-bottom: 0;
+}
+
+.contribution-panel__local-note {
+  font-size: 0.9rem;
 }
 
 .page {

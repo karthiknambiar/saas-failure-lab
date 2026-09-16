@@ -1,6 +1,7 @@
 import { ActionLink } from '../components/ActionLink'
 import { Badge } from '../components/Badge'
 import { Card } from '../components/Card'
+import { getRepositoryDocumentationUrl } from '../config/project'
 
 const promises = [
   'No account required',
@@ -37,6 +38,10 @@ const domains = [
 ]
 
 export function LandingPage() {
+  const repositoryDocumentationUrl = getRepositoryDocumentationUrl(
+    import.meta.env.VITE_REPOSITORY_URL,
+  )
+
   return (
     <>
       <section className="hero container" aria-labelledby="hero-title">
@@ -104,13 +109,22 @@ export function LandingPage() {
           <p className="eyebrow">Built for shared learning</p>
           <h2>Turn real patterns into safe practice.</h2>
           <p>
-            Scenario contribution guidance will live in this repository and will
-            require fictionalized, non-confidential evidence.
+            Repository documentation explains how shared scenarios will stay
+            fictionalized, non-confidential, and safe to learn from.
           </p>
         </div>
-        <ActionLink to="/how-it-works">
-          Explore the investigation model
-        </ActionLink>
+        {repositoryDocumentationUrl ? (
+          <a
+            className="button button--secondary"
+            href={repositoryDocumentationUrl}
+          >
+            Read repository documentation
+          </a>
+        ) : (
+          <p className="contribution-panel__local-note">
+            Repository documentation is available in this checkout.
+          </p>
+        )}
       </section>
     </>
   )

@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 test('navigates from the landing page to the scenario browser', async ({
   page,
 }) => {
-  await page.goto('/')
+  await page.goto('/failure-lab/')
 
   await expect(
     page.getByRole('heading', {
@@ -19,7 +19,7 @@ test('navigates from the landing page to the scenario browser', async ({
 })
 
 test('supports skip navigation by keyboard', async ({ page }) => {
-  await page.goto('/')
+  await page.goto('/failure-lab/')
 
   await page.keyboard.press('Tab')
   await expect(
@@ -30,11 +30,26 @@ test('supports skip navigation by keyboard', async ({ page }) => {
   await expect(page.locator('#main-content')).toBeFocused()
 })
 
+test('reaches primary navigation by keyboard', async ({ page }) => {
+  await page.goto('/failure-lab/')
+
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Tab')
+  await page.keyboard.press('Tab')
+
+  const scenariosLink = page.getByRole('link', { name: 'Scenarios' }).first()
+  await expect(scenariosLink).toBeFocused()
+  await page.keyboard.press('Enter')
+
+  await expect(page).toHaveURL(/\/failure-lab\/scenarios$/)
+})
+
 test('uses the mobile navigation disclosure without horizontal overflow', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/')
+  await page.goto('/failure-lab/')
 
   await page.getByText('Menu', { exact: true }).click()
   await page.getByRole('link', { name: 'How it works' }).last().click()
@@ -48,8 +63,10 @@ test('uses the mobile navigation disclosure without horizontal overflow', async 
 })
 
 test('renders a clean route directly', async ({ page }) => {
-  await page.goto('/scenarios')
+  const response = await page.goto('/failure-lab/scenarios')
 
+  expect(response?.status()).toBe(404)
+  await expect(page).toHaveURL(/\/failure-lab\/scenarios$/)
   await expect(
     page.getByRole('heading', { name: 'Browse troubleshooting scenarios' }),
   ).toBeVisible()
@@ -62,7 +79,7 @@ for (const viewport of [
 ]) {
   test(`fits the landing page at ${viewport.width}px`, async ({ page }) => {
     await page.setViewportSize(viewport)
-    await page.goto('/')
+    await page.goto('/failure-lab/')
 
     await expect(
       page.getByRole('heading', {

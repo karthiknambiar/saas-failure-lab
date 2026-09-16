@@ -18,8 +18,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run preview -- --host=127.0.0.1',
-    url: 'http://127.0.0.1:4173',
+    command: 'npm run build:e2e && npm run preview:e2e',
+    url: 'http://127.0.0.1:4173/failure-lab/',
     reuseExistingServer: false,
   },
 })
