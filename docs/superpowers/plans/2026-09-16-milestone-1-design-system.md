@@ -1,6 +1,6 @@
 # Milestone 1 Design System and Routing Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build an accessible, responsive SaaS Failure Lab application shell with clean static routes, reusable UI primitives, a polished landing page, and an intentionally inactive scenario-browser shell.
 
@@ -24,13 +24,13 @@
 - Create: `src/app/routing.test.ts`
 - Modify: `.github/workflows/deploy.yml`
 
-- [ ] **Step 1: Install React Router**
+- [x] **Step 1: Install React Router**
 
 Run: `npm install react-router-dom`
 
 Expected: exit 0; `react-router-dom` appears under runtime dependencies and the lockfile changes.
 
-- [ ] **Step 2: Write failing tests for deployment-path normalization**
+- [x] **Step 2: Write failing tests for deployment-path normalization**
 
 ```ts
 import { describe, expect, it } from 'vitest'
@@ -51,7 +51,7 @@ Run: `npm test -- --run src/app/routing.test.ts`
 
 Expected: FAIL because `src/app/routing.ts` does not exist.
 
-- [ ] **Step 3: Implement deployment-path normalization**
+- [x] **Step 3: Implement deployment-path normalization**
 
 ```ts
 export function getRouterBasename(baseUrl: string): string | undefined {
@@ -63,7 +63,7 @@ Run: `npm test -- --run src/app/routing.test.ts`
 
 Expected: two passing tests.
 
-- [ ] **Step 4: Write the failing fallback-copy test**
+- [x] **Step 4: Write the failing fallback-copy test**
 
 ```js
 import assert from 'node:assert/strict'
@@ -92,7 +92,7 @@ Run: `node --test scripts/create-spa-fallback.test.mjs`
 
 Expected: FAIL because the implementation module does not exist.
 
-- [ ] **Step 5: Implement and wire the fallback builder**
+- [x] **Step 5: Implement and wire the fallback builder**
 
 ```js
 import { copyFile } from 'node:fs/promises'
@@ -135,7 +135,7 @@ Run: `node --test scripts/create-spa-fallback.test.mjs && npm run build`
 
 Expected: the Node test passes and `dist/index.html` equals `dist/404.html`.
 
-- [ ] **Step 6: Commit routing infrastructure**
+- [x] **Step 6: Commit routing infrastructure**
 
 ```sh
 git add package.json package-lock.json .gitignore vite.config.ts scripts src/app/routing.ts src/app/routing.test.ts .github/workflows/deploy.yml
@@ -155,7 +155,7 @@ git commit -m "feat: add static-safe routing foundation"
 - Create: `src/design/tokens.css`
 - Create: `src/design/global.css`
 
-- [ ] **Step 1: Write failing primitive tests**
+- [x] **Step 1: Write failing primitive tests**
 
 ```tsx
 import { render, screen } from '@testing-library/react'
@@ -206,7 +206,7 @@ Run: `npm test -- --run src/components/components.test.tsx`
 
 Expected: FAIL because the component modules do not exist.
 
-- [ ] **Step 2: Implement the primitive APIs**
+- [x] **Step 2: Implement the primitive APIs**
 
 Implement:
 
@@ -246,7 +246,7 @@ Run: `npm test -- --run src/components/components.test.tsx`
 
 Expected: two passing tests.
 
-- [ ] **Step 3: Add approved visual tokens and global behavior**
+- [x] **Step 3: Add approved visual tokens and global behavior**
 
 Define tokens for background, raised surface, muted surface, strong/soft text, teal accent, warm learning accent, borders, focus ring, spacing, radii, shadows, and readable content widths. `global.css` must provide the reset, typography, button/link/card/badge/evidence styles, skip-link behavior, `:focus-visible`, responsive containers, coarse-pointer target sizing, and `prefers-reduced-motion` rules.
 
@@ -256,7 +256,7 @@ Run: `npm run lint && npm run format:check`
 
 Expected: both commands pass.
 
-- [ ] **Step 4: Commit primitives**
+- [x] **Step 4: Commit primitives**
 
 ```sh
 git add src/components src/design
@@ -280,7 +280,7 @@ git commit -m "feat: add accessible design primitives"
 - Modify: `src/main.tsx`
 - Delete: `src/styles.css`
 
-- [ ] **Step 1: Write failing route and shell tests**
+- [x] **Step 1: Write failing route and shell tests**
 
 ```tsx
 import { render, screen } from '@testing-library/react'
@@ -335,7 +335,7 @@ Run: `npm test -- --run src/app/AppRoutes.test.tsx`
 
 Expected: FAIL because `AppRoutes` does not exist.
 
-- [ ] **Step 2: Implement the shell and route table**
+- [x] **Step 2: Implement the shell and route table**
 
 `AppShell` contains the skip link, branded header, desktop `NavLink` list, native `details` mobile navigation, `<main id="main-content" tabIndex={-1}>`, `Outlet`, and footer.
 
@@ -364,7 +364,7 @@ export function AppRouter() {
 
 `App` returns `<AppRouter />`; `main.tsx` imports `tokens.css` followed by `global.css`.
 
-- [ ] **Step 3: Implement the landing and informational pages**
+- [x] **Step 3: Implement the landing and informational pages**
 
 The landing page composes:
 
@@ -376,7 +376,7 @@ The landing page composes:
 
 The how-it-works page presents the investigation loop and a fictional evidence-panel example that contains no scenario root cause. The not-found page provides home and scenario-browser links.
 
-- [ ] **Step 4: Implement the inactive browser shell**
+- [x] **Step 4: Implement the inactive browser shell**
 
 Render a page heading, description, disabled search input, disabled domain and difficulty selects, visible explanation linked with `aria-describedby`, and an empty state linking to `/how-it-works`.
 
@@ -384,7 +384,7 @@ Run: `npm test -- --run src/app/AppRoutes.test.tsx src/App.test.tsx`
 
 Expected: all route and top-level application tests pass.
 
-- [ ] **Step 5: Commit pages and routing**
+- [x] **Step 5: Commit pages and routing**
 
 ```sh
 git add src/app src/pages src/features src/App.tsx src/App.test.tsx src/main.tsx src/styles.css
@@ -397,7 +397,7 @@ git commit -m "feat: build responsive product shell"
 
 - Modify: `tests/e2e/home.spec.ts`
 
-- [ ] **Step 1: Replace the M0 smoke test with failing M1 journeys**
+- [x] **Step 1: Replace the M0 smoke test with failing M1 journeys**
 
 ```ts
 import { expect, test } from '@playwright/test'
@@ -448,11 +448,11 @@ Run: `npm run test:e2e`
 
 Expected: FAIL before the M1 shell exists; after Task 3, all four journeys pass.
 
-- [ ] **Step 2: Inspect responsive behavior**
+- [x] **Step 2: Inspect responsive behavior**
 
 Use Playwright at 1280×800, 768×1024, and 320×700. Confirm no horizontal document overflow, both navigation modes switch at the intended breakpoint, focus remains visible, cards reflow, and disabled filters remain labeled.
 
-- [ ] **Step 3: Commit browser coverage**
+- [x] **Step 3: Commit browser coverage**
 
 ```sh
 git add tests/e2e/home.spec.ts
@@ -467,17 +467,17 @@ git commit -m "test: cover shell navigation journeys"
 - Modify: `docs/architecture.md`
 - Modify: `docs/superpowers/plans/2026-09-16-milestone-1-design-system.md`
 
-- [ ] **Step 1: Document Milestone 1**
+- [x] **Step 1: Document Milestone 1**
 
 Update the README status, route list, static fallback behavior, and current limitations. Update architecture documentation with the React Router boundary, compiled basename, design-system ownership, and GitHub Pages fallback.
 
-- [ ] **Step 2: Mark completed plan steps and format**
+- [x] **Step 2: Mark completed plan steps and format**
 
 Change completed checkboxes to `[x]`, then run `npm run format`.
 
 Expected: exit 0.
 
-- [ ] **Step 3: Run clean-install and full verification**
+- [x] **Step 3: Run clean-install and full verification**
 
 Run in order:
 
@@ -492,11 +492,11 @@ npm run test:e2e
 
 Expected: every command exits 0; all Node, Vitest, and Playwright tests pass; `dist/index.html` and `dist/404.html` are identical.
 
-- [ ] **Step 4: Audit milestone scope**
+- [x] **Step 4: Audit milestone scope**
 
 Inspect `git diff`, `git status`, dependency lists, and generated `dist`. Confirm no scenario YAML, Zod, gameplay state, scoring logic, localStorage, backend, authentication, database, AI integration, or secret keys were added.
 
-- [ ] **Step 5: Commit documentation and final plan state**
+- [x] **Step 5: Commit documentation and final plan state**
 
 ```sh
 git add README.md docs/architecture.md docs/superpowers/plans/2026-09-16-milestone-1-design-system.md

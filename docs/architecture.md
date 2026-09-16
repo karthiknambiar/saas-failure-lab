@@ -9,7 +9,9 @@ index.html
     ↓
 React entry point
     ↓
-Accessible presentation
+React Router + application shell
+    ↓
+Page composition + design-system primitives
     ↓
 Static HTML, CSS, and JavaScript in dist/
 ```
@@ -40,7 +42,7 @@ The boundaries have clear responsibilities:
 - **Presentation:** Accessible React views that render engine state without embedding answer keys or scoring rules.
 - **Storage:** A versioned adapter for local progress with corruption recovery and migrations.
 
-These are boundaries, not implementations in Milestone 0. Empty interfaces and state libraries have not been added prematurely.
+The routing and presentation boundaries now exist. Content, engine, and storage remain planned boundaries rather than empty speculative interfaces.
 
 ## Architecture decisions
 
@@ -48,13 +50,21 @@ These are boundaries, not implementations in Milestone 0. Empty interfaces and s
 
 The current product requires no shared mutable state, identity, private dataset, server-authoritative competition, or hosted inference. A backend would add cost, security surface, operational failure modes, and privacy concerns without supporting the core learning loop. Vite therefore emits the complete application as static assets.
 
-### Portable asset paths
+### Clean routes on static hosting
 
-Vite uses a relative asset base. The same `dist` output can be hosted at a domain root or repository subpath. Routing is deferred to Milestone 1; that milestone must adopt a static-host-safe deep-link strategy while retaining the intended user-facing routes.
+Vite uses `/` locally and accepts a deployment base path through `VITE_BASE_PATH`. The GitHub Pages workflow supplies the repository path, and React Router derives its `basename` from Vite's compiled `BASE_URL`.
+
+The build copies `dist/index.html` to `dist/404.html`. GitHub Pages can therefore return the application document for a direct clean-route request, after which React Router resolves the requested path. Hosts with native SPA rewrites may use those instead. No routing server is required.
 
 ### Minimal dependencies
 
-React and React DOM are the only runtime packages. Tooling packages are development-only. React Router, state management, Zod, YAML parsing, and persistence libraries will be added only when their milestone requires them.
+React, React DOM, and React Router are the only runtime packages. Tooling packages are development-only. State management, Zod, YAML parsing, and persistence libraries will be added only when their milestone requires them.
+
+### Presentation ownership
+
+The application shell owns skip navigation, global navigation, the main landmark, and the footer. Pages own product-specific composition. Small primitives own native button/link semantics, cards, badges, and evidence-panel structure. CSS tokens and global styles own shared visual decisions, responsive behavior, focus treatment, and reduced-motion handling.
+
+The scenario browser is intentionally inactive: its controls are disabled and explained until validated content exists. This prevents Milestone 1 presentation from becoming hidden scenario behavior.
 
 ### Framework-independent domain behavior
 
@@ -64,15 +74,15 @@ Future composition, state transitions, and scoring will be plain TypeScript wher
 
 Milestone 0 does not provide a placeholder `validate:scenarios` command. A no-op check would provide false confidence, while implementing the real validator would pull Milestone 2 into the foundation. The genuine YAML/Zod/semantic validation gate will be introduced with scenario content in Milestone 2 and then added to CI.
 
-### Accessibility from the first render
+### Accessibility as behavior
 
-The placeholder uses semantic landmarks, labeled sections, keyboard-operable navigation, visible focus treatment, responsive layout, and reduced-motion handling. Later milestones must treat accessibility checks as acceptance criteria rather than final polish.
+The shell uses semantic landmarks, a skip link, active-route semantics, a native mobile navigation disclosure, labeled disabled controls, visible focus treatment, responsive reflow down to 320 CSS pixels, and reduced-motion handling. Browser tests verify keyboard navigation and mobile route access.
 
 ## Test strategy
 
 - **Vitest:** fast TypeScript and component behavior tests
 - **React Testing Library:** user-facing queries and accessible semantics
-- **Playwright:** smoke verification against the production preview
+- **Playwright:** keyboard, routing, mobile-navigation, clean-route, and responsive-width verification against a fresh production preview
 - **GitHub Actions:** repeatable clean-install quality gates
 
 Engine and scenario contract suites will be added with the behavior they verify, following test-first development.
@@ -81,6 +91,6 @@ Engine and scenario contract suites will be added with the behavior they verify,
 
 The deployment workflow builds on GitHub-hosted runners and publishes only `dist` through GitHub Pages. It uses narrowly scoped Pages and identity-token permissions. No application secrets are required or embedded into browser assets.
 
-## Milestone boundary
+## Current milestone boundary
 
-Milestone 0 includes repository configuration, placeholder UI, formatting, linting, tests, CI, deployment, and architecture documentation. It explicitly excludes routing, a design system, gameplay, IAM-001, scenario schemas/content, randomization, investigation state, scoring, debriefs, and progress persistence.
+Milestone 1 includes clean routing, the application shell, accessible UI primitives, the landing page, the how-it-works page, not-found recovery, and the inactive scenario-browser shell. It explicitly excludes gameplay, IAM-001, scenario schemas/content, working filters, randomization, investigation state, scoring, debriefs, and progress persistence.
