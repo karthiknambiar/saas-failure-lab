@@ -4,14 +4,13 @@ import { describe, expect, it } from 'vitest'
 import { App } from './App'
 
 describe('App', () => {
-  it('introduces the lab and identifies the current milestone', () => {
+  it('renders the landing route', () => {
     render(<App />)
 
     expect(
-      screen.getByRole('heading', { name: 'SaaS Failure Lab' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText('Repository foundation is ready.'),
+      screen.getByRole('heading', {
+        name: 'Practice the investigation before it is urgent.',
+      }),
     ).toBeInTheDocument()
   })
 })
