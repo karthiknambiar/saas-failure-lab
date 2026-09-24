@@ -84,6 +84,25 @@ describe('normalizeScenarioIndex', () => {
     expect(entries[0].concepts).toEqual(['authentication', 'roles'])
     expect(documents).toEqual(before)
   })
+
+  it('sorts IDs and concepts by deterministic code-unit order', () => {
+    const documents = [
+      document('ä-001', {
+        learning: {
+          concepts: ['äther', 'zeta'],
+          objectives: ['Compare deterministic ordering.'],
+        },
+      }),
+      document('z-001'),
+    ]
+    const before = structuredClone(documents)
+
+    const entries = normalizeScenarioIndex(documents)
+
+    expect(entries.map(({ id }) => id)).toEqual(['z-001', 'ä-001'])
+    expect(entries[1].concepts).toEqual(['zeta', 'äther'])
+    expect(documents).toEqual(before)
+  })
 })
 
 describe('serializeScenarioIndex', () => {

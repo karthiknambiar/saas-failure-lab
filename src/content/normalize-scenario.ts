@@ -10,6 +10,12 @@ export interface ScenarioIndexEntry {
   symptomSummary: string
 }
 
+function compareText(left: string, right: string): number {
+  if (left < right) return -1
+  if (left > right) return 1
+  return 0
+}
+
 export function normalizeScenarioIndex(
   documents: readonly ScenarioDocument[],
 ): ScenarioIndexEntry[] {
@@ -20,12 +26,10 @@ export function normalizeScenarioIndex(
       domain: scenario.domain,
       difficulty: scenario.difficulty,
       estimatedMinutes: scenario.estimated_minutes,
-      concepts: [...scenario.learning.concepts].sort((left, right) =>
-        left.localeCompare(right),
-      ),
+      concepts: [...scenario.learning.concepts].sort(compareText),
       symptomSummary: scenario.brief.symptom_variants[0],
     }))
-    .sort((left, right) => left.id.localeCompare(right.id))
+    .sort((left, right) => compareText(left.id, right.id))
 }
 
 export function serializeScenarioIndex(
