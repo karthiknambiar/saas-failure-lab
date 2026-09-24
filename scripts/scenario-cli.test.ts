@@ -11,7 +11,7 @@ import {
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { stringify } from 'yaml'
 
 import type { ScenarioSource } from '../src/content/scenario-schema'
@@ -67,6 +67,31 @@ describe('runScenarioCommand', () => {
     await expect(runScenarioCommand('validate', paths)).resolves.toEqual({
       success: true,
       output: 'Validated 1 scenarios.',
+    })
+  })
+
+  it('sorts scenario filenames without host locale comparison', async () => {
+    const paths = await createPaths()
+    await writeScenario(paths.contentDirectory, 'iam-002.yaml', {
+      id: 'iam-002',
+    })
+    await writeScenario(paths.contentDirectory, 'iam-001.yaml')
+    const localeCompare = vi
+      .spyOn(String.prototype, 'localeCompare')
+      .mockImplementation(() => {
+        throw new Error('locale comparison must not be used')
+      })
+
+    let result
+    try {
+      result = await runScenarioCommand('validate', paths)
+    } finally {
+      localeCompare.mockRestore()
+    }
+
+    expect(result).toEqual({
+      success: true,
+      output: 'Validated 2 scenarios.',
     })
   })
 
@@ -160,6 +185,24 @@ describe('runScenarioCommand', () => {
     const paths = await createPaths()
     await writeScenario(paths.contentDirectory, 'iam-001.yaml')
     await runScenarioCommand('generate', paths)
+    const oldTimestamp = new Date('2020-01-01T00:00:00.000Z')
+    await utimes(paths.outputFile, oldTimestamp, oldTimestamp)
+
+    const result = await runScenarioCommand('generate', paths)
+
+    expect(result).toEqual({
+      success: true,
+      output: 'Generated 1 scenarios.',
+    })
+    expect((await stat(paths.outputFile)).mtimeMs).toBe(oldTimestamp.getTime())
+  })
+
+  it('does not rewrite a generated index that differs only by CRLF endings', async () => {
+    const paths = await createPaths()
+    await writeScenario(paths.contentDirectory, 'iam-001.yaml')
+    await runScenarioCommand('generate', paths)
+    const generatedIndex = await readFile(paths.outputFile, 'utf8')
+    await writeFile(paths.outputFile, generatedIndex.replaceAll('\n', '\r\n'))
     const oldTimestamp = new Date('2020-01-01T00:00:00.000Z')
     await utimes(paths.outputFile, oldTimestamp, oldTimestamp)
 

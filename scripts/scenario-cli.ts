@@ -50,6 +50,16 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
+function compareCodeUnits(left: string, right: string): number {
+  if (left < right) return -1
+  if (left > right) return 1
+  return 0
+}
+
+function normalizeLineEndings(value: string): string {
+  return value.replaceAll('\r\n', '\n')
+}
+
 async function loadScenarioDocuments(contentDirectory: string): Promise<{
   documents: ScenarioDocument[]
   issues: ScenarioIssue[]
@@ -57,7 +67,7 @@ async function loadScenarioDocuments(contentDirectory: string): Promise<{
   const fileNames = (await readdir(contentDirectory, { withFileTypes: true }))
     .filter((entry) => entry.isFile() && entry.name.endsWith('.yaml'))
     .map((entry) => entry.name)
-    .sort((left, right) => left.localeCompare(right))
+    .sort(compareCodeUnits)
   const documents: ScenarioDocument[] = []
   const issues: ScenarioIssue[] = []
 
@@ -98,7 +108,13 @@ async function writeIndexIfChanged(
     }
   }
 
-  if (existingIndex === serializedIndex) return
+  if (
+    existingIndex !== undefined &&
+    normalizeLineEndings(existingIndex) ===
+      normalizeLineEndings(serializedIndex)
+  ) {
+    return
+  }
 
   const outputDirectory = path.dirname(outputFile)
   const temporaryFile = path.join(
