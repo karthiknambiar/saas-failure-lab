@@ -1,4 +1,12 @@
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
+import { randomUUID } from 'node:crypto'
+import {
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  writeFile,
+} from 'node:fs/promises'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -26,6 +34,16 @@ export interface ScenarioCommandPaths {
 export interface ScenarioCommandResult {
   success: boolean
   output: string
+}
+
+export interface ScenarioCommandOperations {
+  writeFile(filePath: string, content: string): Promise<void>
+}
+
+const defaultOperations: ScenarioCommandOperations = {
+  async writeFile(filePath, content) {
+    await writeFile(filePath, content)
+  },
 }
 
 function errorMessage(error: unknown): string {
@@ -64,6 +82,7 @@ async function loadScenarioDocuments(contentDirectory: string): Promise<{
 async function writeIndexIfChanged(
   outputFile: string,
   serializedIndex: string,
+  operations: ScenarioCommandOperations,
 ): Promise<void> {
   let existingIndex: string | undefined
 
@@ -81,13 +100,25 @@ async function writeIndexIfChanged(
 
   if (existingIndex === serializedIndex) return
 
-  await mkdir(path.dirname(outputFile), { recursive: true })
-  await writeFile(outputFile, serializedIndex)
+  const outputDirectory = path.dirname(outputFile)
+  const temporaryFile = path.join(
+    outputDirectory,
+    `.${path.basename(outputFile)}.${process.pid}.${randomUUID()}.tmp`,
+  )
+  await mkdir(outputDirectory, { recursive: true })
+
+  try {
+    await operations.writeFile(temporaryFile, serializedIndex)
+    await rename(temporaryFile, outputFile)
+  } finally {
+    await rm(temporaryFile, { force: true })
+  }
 }
 
 export async function runScenarioCommand(
   command: ScenarioCommand,
   paths: ScenarioCommandPaths,
+  operations: ScenarioCommandOperations = defaultOperations,
 ): Promise<ScenarioCommandResult> {
   try {
     const { documents, issues } = await loadScenarioDocuments(
@@ -99,7 +130,11 @@ export async function runScenarioCommand(
 
     if (command === 'generate') {
       const index = normalizeScenarioIndex(documents)
-      await writeIndexIfChanged(paths.outputFile, serializeScenarioIndex(index))
+      await writeIndexIfChanged(
+        paths.outputFile,
+        serializeScenarioIndex(index),
+        operations,
+      )
       return {
         success: true,
         output: `Generated ${documents.length} scenarios.`,

@@ -2,6 +2,7 @@ import {
   mkdir,
   mkdtemp,
   readFile,
+  readdir,
   rm,
   stat,
   utimes,
@@ -13,6 +14,7 @@ import path from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { stringify } from 'yaml'
 
+import type { ScenarioSource } from '../src/content/scenario-schema'
 import { createScenarioFixture } from '../src/content/test-fixtures'
 import { runScenarioCommand } from './scenario-cli'
 
@@ -94,6 +96,13 @@ describe('runScenarioCommand', () => {
       path.join(paths.contentDirectory, 'invalid.yaml'),
       'id: invalid',
     )
+    const semanticScenario = createScenarioFixture() as ScenarioSource
+    semanticScenario.id = 'iam-003'
+    semanticScenario.evidence[0].unlock_after = ['missing-evidence']
+    await writeFile(
+      path.join(paths.contentDirectory, 'iam-003.yaml'),
+      stringify(semanticScenario),
+    )
 
     const result = await runScenarioCommand('validate', paths)
 
@@ -103,6 +112,12 @@ describe('runScenarioCommand', () => {
     )
     expect(result.output).toContain(
       path.join(paths.contentDirectory, 'invalid.yaml'),
+    )
+    expect(result.output).toContain(
+      path.join(paths.contentDirectory, 'iam-003.yaml'),
+    )
+    expect(result.output).toContain(
+      'Unknown evidence reference "missing-evidence".',
     )
   })
 
@@ -155,5 +170,45 @@ describe('runScenarioCommand', () => {
       output: 'Generated 1 scenarios.',
     })
     expect((await stat(paths.outputFile)).mtimeMs).toBe(oldTimestamp.getTime())
+  })
+
+  it('keeps an existing index unchanged when scenario validation fails', async () => {
+    const paths = await createPaths()
+    await writeFile(
+      path.join(paths.contentDirectory, 'broken.yaml'),
+      'brief: [',
+    )
+    await mkdir(path.dirname(paths.outputFile), { recursive: true })
+    await writeFile(paths.outputFile, 'sentinel index')
+
+    const result = await runScenarioCommand('generate', paths)
+
+    expect(result.success).toBe(false)
+    await expect(readFile(paths.outputFile, 'utf8')).resolves.toBe(
+      'sentinel index',
+    )
+  })
+
+  it('keeps the existing index and cleans its temporary file when writing fails', async () => {
+    const paths = await createPaths()
+    await writeScenario(paths.contentDirectory, 'iam-001.yaml')
+    await mkdir(path.dirname(paths.outputFile), { recursive: true })
+    await writeFile(paths.outputFile, 'sentinel index')
+
+    const result = await runScenarioCommand('generate', paths, {
+      async writeFile(filePath: string, content: string) {
+        await writeFile(filePath, content.slice(0, 10))
+        throw Object.assign(new Error('disk full'), { code: 'ENOSPC' })
+      },
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.output).toContain('disk full')
+    await expect(readFile(paths.outputFile, 'utf8')).resolves.toBe(
+      'sentinel index',
+    )
+    await expect(readdir(path.dirname(paths.outputFile))).resolves.toEqual([
+      path.basename(paths.outputFile),
+    ])
   })
 })
