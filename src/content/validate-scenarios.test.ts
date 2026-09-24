@@ -172,6 +172,31 @@ describe('validateScenarioDocuments', () => {
     ])
   })
 
+  it('reports identical cycles for reordered evidence and dependencies', () => {
+    const first = createScenarioFixture() as ScenarioSource
+    const second = createScenarioFixture() as ScenarioSource
+    const firstTemplate = first.evidence[0]
+    const secondTemplate = second.evidence[0]
+    first.evidence = [
+      { ...firstTemplate, id: 'alpha', unlock_after: ['beta', 'gamma'] },
+      { ...firstTemplate, id: 'beta', unlock_after: ['gamma'] },
+      { ...firstTemplate, id: 'gamma', unlock_after: ['alpha'] },
+    ]
+    second.evidence = [
+      { ...secondTemplate, id: 'gamma', unlock_after: ['alpha'] },
+      { ...secondTemplate, id: 'beta', unlock_after: ['gamma'] },
+      { ...secondTemplate, id: 'alpha', unlock_after: ['gamma', 'beta'] },
+    ]
+    first.debrief.evidence_chain = ['alpha']
+    second.debrief.evidence_chain = ['alpha']
+    first.debrief.efficient_path = [{ kind: 'evidence', ref: 'alpha' }]
+    second.debrief.efficient_path = [{ kind: 'evidence', ref: 'alpha' }]
+
+    expect(validateScenarioDocuments([document(second)])).toEqual(
+      validateScenarioDocuments([document(first)]),
+    )
+  })
+
   it('reports when red-herring selection exceeds the pool', () => {
     const scenario = createScenarioFixture() as ScenarioSource
     scenario.red_herrings.choose = 1
@@ -272,5 +297,38 @@ describe('validateScenarioDocuments', () => {
 
     expect(issues.map((issue) => issue.filePath)).toEqual(['a.yaml', 'z.yaml'])
     expect(documents).toEqual(before)
+  })
+
+  it('sorts issues by path and then message within a file', () => {
+    const scenario = createScenarioFixture() as ScenarioSource
+    scenario.evidence[0].unlock_after = ['service-status']
+    scenario.brief.symptom_variants = [
+      `${scenario.root_cause.id}: ${scenario.hypotheses[0].label}`,
+    ]
+
+    expect(
+      validateScenarioDocuments([
+        document(scenario, 'scenario.yaml', 'wrong-name'),
+      ]).map(({ path, message }) => ({ path, message })),
+    ).toEqual([
+      {
+        path: 'brief.symptom_variants[0]',
+        message:
+          'Public symptom reveals correct hypothesis label "The affected users lost their reporting role.".',
+      },
+      {
+        path: 'brief.symptom_variants[0]',
+        message:
+          'Public symptom reveals root-cause ID "reporting-role-removed".',
+      },
+      {
+        path: 'evidence[0].unlock_after[0]',
+        message: 'Evidence "service-status" cannot depend on itself.',
+      },
+      {
+        path: 'id',
+        message: 'Scenario ID "iam-001" must match source name "wrong-name".',
+      },
+    ])
   })
 })

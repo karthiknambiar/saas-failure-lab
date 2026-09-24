@@ -64,9 +64,11 @@ function reportDependencyCycles(
   const graph = new Map(
     document.scenario.evidence.map((item) => [
       item.id,
-      item.unlock_after.filter(
-        (dependency) => dependency !== item.id && evidenceIds.has(dependency),
-      ),
+      item.unlock_after
+        .filter(
+          (dependency) => dependency !== item.id && evidenceIds.has(dependency),
+        )
+        .sort(compareText),
     ]),
   )
   const visiting = new Set<string>()
@@ -104,7 +106,7 @@ function reportDependencyCycles(
     visited.add(id)
   }
 
-  for (const id of graph.keys()) visit(id)
+  for (const id of [...graph.keys()].sort(compareText)) visit(id)
 }
 
 function validateDocument(
