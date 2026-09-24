@@ -2,9 +2,12 @@
 
 SaaS Failure Lab is a free, open-source troubleshooting simulator for people who work between customers and engineering. It will teach evidence-driven investigation across APIs, identity, integrations, data flows, and browser behavior without requiring access to a real production environment.
 
-> Current status: Milestone 1 — Design System and Routing
+> Current status: Milestone 2 — Content System
 
-The repository currently provides a polished responsive landing page, clean client-side routes, reusable accessible UI primitives, and an intentionally inactive scenario-browser shell. It does not contain gameplay or scenario content yet.
+The repository now includes two fictional YAML scenarios, a validated content
+contract, and a deterministic generated public scenario index alongside the
+responsive application shell. The scenario browser remains intentionally
+inactive: the index is not connected to the UI, and there is no gameplay yet.
 
 ## Product constraints
 
@@ -36,6 +39,8 @@ The development server prints the local URL when it starts.
 ```sh
 npm run format:check
 npm run lint
+npm run validate:scenarios
+npm run generate:scenarios
 npm test
 npm run build
 npm run test:e2e
@@ -47,7 +52,9 @@ Playwright requires its Chromium browser once per machine:
 npx playwright install chromium
 ```
 
-Use `npm run format` to format repository files.
+Use `npm run format` to format repository files. Scenario generation validates
+all YAML first and updates `src/generated/scenario-index.json` only when its
+deterministic output changes.
 
 ## Static build and deployment
 
@@ -69,16 +76,25 @@ The deployment workflow supplies the repository base path to Vite. React Router 
 
 ## Test layers
 
-- Vitest and React Testing Library verify component behavior in jsdom.
+- Vitest verifies scenario schema, parsing, semantic validation, normalization,
+  CLI behavior, real content, and component behavior.
+- React Testing Library verifies user-visible behavior and accessibility in
+  jsdom.
 - Playwright verifies the production build in Chromium through Vite's preview server.
-- Scenario contract validation begins in Milestone 2, alongside the real YAML and Zod content system.
+- CI runs scenario validation and rejects generated-index drift before building
+  the static application.
 
 ## Architecture and planning
 
 - [Architecture](docs/architecture.md)
+- [Scenario authoring guide](docs/scenario-authoring.md)
 - [Milestone 0 design](docs/superpowers/specs/2026-09-15-milestone-0-foundation-design.md)
 - [Milestone 0 implementation plan](docs/superpowers/plans/2026-09-15-milestone-0-foundation.md)
 - [Milestone 1 design](docs/superpowers/specs/2026-09-15-milestone-1-design-system.md)
 - [Milestone 1 implementation plan](docs/superpowers/plans/2026-09-16-milestone-1-design-system.md)
+- [Milestone 2 content-system design](docs/superpowers/specs/2026-09-24-milestone-2-content-system-design.md)
+- [Milestone 2 implementation plan](docs/superpowers/plans/2026-09-24-milestone-2-content-system.md)
 
-The product design documents define a milestone-based roadmap. Milestone 2 introduces the real YAML, Zod, and scenario-validation content system; the current browser shell deliberately does not imitate that behavior.
+The product design documents define a milestone-based roadmap. Milestone 2
+implements the YAML, Zod, semantic-validation, and public-index pipeline while
+deliberately leaving the browser shell inactive until gameplay work begins.

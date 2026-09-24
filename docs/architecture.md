@@ -18,21 +18,26 @@ Static HTML, CSS, and JavaScript in dist/
 
 There is no runtime backend, authentication system, database, remote AI dependency, or secret credential path.
 
-## Planned product boundaries
+## Product boundaries
 
-Later milestones will introduce four major boundaries while preserving the static architecture:
+Milestone 2 implements the content and validation boundary while preserving the
+static architecture:
 
 ```text
-YAML scenario definitions
-    ↓ build-time validation and normalization
-Normalized scenario content
-    ↓
-Framework-independent deterministic engine
-    ↓
-React presentation
-    ↓
-Versioned browser-local progress storage
+content/scenarios/*.yaml
+    ↓ YAML parse + Zod source schema
+semantic validation
+    ↓ deterministic normalization
+src/generated/scenario-index.json (public browse fields only)
+    ↓ build-time generation
+static Vite build in dist/
 ```
+
+Future milestones will feed full validated scenario definitions into a
+framework-independent deterministic engine, then React presentation and
+versioned browser-local progress storage. Runtime evidence unlocking,
+composition, investigation state, scoring, and debrief behavior remain future
+engine work.
 
 The boundaries have clear responsibilities:
 
@@ -42,7 +47,9 @@ The boundaries have clear responsibilities:
 - **Presentation:** Accessible React views that render engine state without embedding answer keys or scoring rules.
 - **Storage:** A versioned adapter for local progress with corruption recovery and migrations.
 
-The routing and presentation boundaries now exist. Content, engine, and storage remain planned boundaries rather than empty speculative interfaces.
+The routing, presentation, content, and validation boundaries now exist. The
+engine and storage remain planned boundaries rather than empty speculative
+interfaces.
 
 ## Architecture decisions
 
@@ -62,21 +69,41 @@ The build copies `dist/index.html` to `dist/404.html`. GitHub Pages can therefor
 
 ### Minimal dependencies
 
-React, React DOM, and React Router are the only runtime packages. Tooling packages are development-only. State management, Zod, YAML parsing, and persistence libraries will be added only when their milestone requires them.
+React, React DOM, and React Router are the browser runtime packages. Zod and the
+YAML parser support the build-time content pipeline; scenario YAML is not parsed
+in the browser. State management and persistence libraries will be added only
+when their milestone requires them.
 
 ### Presentation ownership
 
 The application shell owns skip navigation, global navigation, the main landmark, and the footer. Pages own product-specific composition. Small primitives own native button/link semantics, cards, badges, and evidence-panel structure. CSS tokens and global styles own shared visual decisions, responsive behavior, focus treatment, and reduced-motion handling.
 
-The scenario browser is intentionally inactive: its controls are disabled and explained until validated content exists. This prevents Milestone 1 presentation from becoming hidden scenario behavior.
+The scenario browser remains intentionally inactive: Milestone 2 validates and
+generates content but does not connect the index to the browser or add gameplay.
+Its controls remain disabled and explanatory.
 
 ### Framework-independent domain behavior
 
 Future composition, state transitions, and scoring will be plain TypeScript wherever practical. React will consume public engine results rather than own hidden business rules. This permits deterministic unit tests without rendering UI.
 
-### Scenario validation starts with the content system
+### Build-time content validation
 
-Milestone 0 does not provide a placeholder `validate:scenarios` command. A no-op check would provide false confidence, while implementing the real validator would pull Milestone 2 into the foundation. The genuine YAML/Zod/semantic validation gate will be introduced with scenario content in Milestone 2 and then added to CI.
+The content pipeline is implemented as pure schema, parser, semantic-validation,
+and normalization modules. Those modules accept data or text and do not own
+filesystem access. The Node CLI owns YAML discovery and reads, aggregated error
+reporting, and atomic generated-index writes.
+
+The committed public index contains exactly seven browse fields: ID, title,
+domain, difficulty, estimated minutes, concepts, and the first public symptom
+summary. It omits customer context, learning objectives, root causes,
+hypotheses, evidence and relevance, red herrings, remediation answers,
+communication quality, and debrief content. Full validated definitions remain
+future engine inputs and are not emitted into the public browser index.
+
+`npm run validate:scenarios` fails on parsing, schema, or semantic errors.
+`npm run generate:scenarios` validates before writing, and production builds run
+generation before TypeScript and Vite. CI validates explicitly, regenerates the
+committed index, and fails when the result drifts from source control.
 
 ### Accessibility as behavior
 
@@ -84,12 +111,14 @@ The shell uses semantic landmarks, a skip link, active-route semantics, a native
 
 ## Test strategy
 
-- **Vitest:** fast TypeScript and component behavior tests
+- **Vitest:** schema, parsing, semantic validation, normalization, CLI, content,
+  and component behavior tests
 - **React Testing Library:** user-facing queries and accessible semantics
 - **Playwright:** keyboard, routing, mobile-navigation, clean-route, and responsive-width verification against a fresh production preview
 - **GitHub Actions:** repeatable clean-install quality gates
 
-Engine and scenario contract suites will be added with the behavior they verify, following test-first development.
+Engine suites will be added with the behavior they verify. Scenario contract
+suites now cover both valid content and representative failure modes.
 
 ## Deployment
 
@@ -97,4 +126,10 @@ The deployment workflow builds on GitHub-hosted runners and publishes only `dist
 
 ## Current milestone boundary
 
-Milestone 1 includes clean routing, the application shell, accessible UI primitives, the landing page, the how-it-works page, not-found recovery, and the inactive scenario-browser shell. It explicitly excludes gameplay, IAM-001, scenario schemas/content, working filters, randomization, investigation state, scoring, debriefs, and progress persistence.
+Milestone 2 includes the YAML/Zod scenario contract, pure parsing and semantic
+validation, deterministic normalization, two fictional scenarios, a committed
+public index, CLI/build/CI gates, and contributor documentation. The browser is
+still inactive and does not consume the index. This milestone explicitly
+excludes working filters, scenario composition, randomization, runtime evidence
+unlocking, investigation state, scoring, debrief gameplay, and progress
+persistence.
