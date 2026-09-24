@@ -1,0 +1,186 @@
+id: iam-001
+version: 1
+title: Login works, feature does not
+domain: identity
+difficulty: beginner
+estimated_minutes: 8
+learning:
+  concepts:
+    - authentication-vs-authorization
+    - role-based-access-control
+    - evidence-driven-troubleshooting
+  objectives:
+    - Distinguish successful authentication from failed authorization.
+    - Use scope and audit evidence to identify an access regression.
+customer_context:
+  - Northstar Components is a fictional manufacturer using role-based access for its finance workspace.
+  - The finance team is completing its month-end reporting cycle.
+brief:
+  severity: high
+  business_impact: Two finance users cannot complete month-end reporting while their reporting access is unavailable.
+  symptom_variants:
+    - Two finance users can sign in, but reporting shows an access-denied message.
+    - Reporting works for other finance teammates while two recently affected users cannot open it.
+root_cause:
+  id: reporting-role-removed
+  category: authorization
+  explanation: A recent access change removed the reporting role from both affected users while leaving their accounts and authentication intact.
+hypotheses:
+  - id: reporting-role-removed
+    label: A recent role change removed the affected users' reporting authorization.
+  - id: reporting-service-outage
+    label: The reporting service is experiencing an outage.
+  - id: authentication-session-failure
+    label: The affected users' authentication sessions are invalid.
+  - id: browser-compatibility-change
+    label: A browser update is preventing the reporting interface from loading.
+evidence:
+  - id: service-status
+    tool: service_status
+    cost: 1
+    relevance: supporting
+    unlock_after: []
+    content:
+      kind: status
+      state: operational
+      detail: Reporting and identity services are healthy with no active incidents.
+    explanation: Healthy services make a platform-wide outage less likely but do not explain the user-specific failure.
+  - id: affected-user-scope
+    tool: user_scope
+    cost: 1
+    relevance: critical
+    unlock_after: []
+    content:
+      kind: table
+      columns:
+        - cohort
+        - sign_in
+        - reporting_access
+      rows:
+        - cohort: Two affected finance users
+          sign_in: Successful
+          reporting_access: Denied
+        - cohort: Other finance users
+          sign_in: Successful
+          reporting_access: Available
+    explanation: The comparison confines the problem to two user access profiles rather than the shared reporting service.
+  - id: authentication-events
+    tool: identity_events
+    cost: 2
+    relevance: critical
+    unlock_after:
+      - affected-user-scope
+    content:
+      kind: timeline
+      events:
+        - time: 09:02
+          event: First affected user completed sign-in successfully.
+        - time: 09:05
+          event: Second affected user completed sign-in successfully.
+        - time: 09:06
+          event: Reporting authorization checks returned access denied.
+    explanation: Successful sign-ins rule out an authentication failure and direct the investigation toward authorization.
+  - id: role-configuration
+    tool: role_configuration
+    cost: 2
+    relevance: critical
+    unlock_after:
+      - authentication-events
+    content:
+      kind: key_value
+      values:
+        affected_users_reporting_role: Not assigned
+        peer_users_reporting_role: Assigned
+        account_status: Active
+    explanation: The affected users are active but lack the role that grants reporting access.
+  - id: role-audit-history
+    tool: audit_log
+    cost: 3
+    relevance: critical
+    unlock_after:
+      - role-configuration
+    content:
+      kind: timeline
+      events:
+        - time: Previous day 16:40
+          event: An approved finance-group cleanup began.
+        - time: Previous day 16:43
+          event: The reporting role was removed from both affected users during the cleanup.
+        - time: Previous day 16:45
+          event: The cleanup completed without a post-change access review.
+    explanation: The audit trail identifies the change that caused the authorization regression and the missing verification step.
+red_herrings:
+  pool:
+    - id: browser-update
+      label: A browser update was installed on one affected user's laptop.
+      explanation: The timing is plausible, but the server-side access denial and missing roles show that the browser change is not causal.
+  choose: 1
+remediation:
+  choices:
+    - id: restore-reporting-role
+      label: Restore the reporting role to the two affected users after confirming the approved access baseline.
+      phase: immediate
+      quality: correct
+      explanation: This safely restores the authorization required for month-end work without changing authentication controls.
+    - id: restart-reporting-service
+      label: Restart the reporting service for all customers.
+      phase: immediate
+      quality: incorrect
+      explanation: The service is healthy, and a restart would add risk without correcting user permissions.
+    - id: clear-browser-data
+      label: Ask both users to clear browser data and retry.
+      phase: immediate
+      quality: partial
+      explanation: A retry may be harmless, but it does not repair the missing server-side role.
+    - id: require-role-change-review
+      label: Require peer review and post-change access verification for bulk role changes.
+      phase: prevention
+      quality: correct
+      explanation: Review and verification reduce the chance that future cleanup work silently removes required access.
+    - id: disable-role-cleanups
+      label: Permanently stop all role cleanup work.
+      phase: prevention
+      quality: incorrect
+      explanation: Avoiding maintenance leaves stale access in place instead of making changes safer.
+communication:
+  choices:
+    - id: share-scoped-update
+      message: We confirmed reporting is healthy and the issue is limited to two finance users. Their sign-ins succeed, and we are reviewing their reporting permissions now; the next update will follow within 30 minutes.
+      quality: excellent
+      explanation: It states verified scope, separates sign-in from permissions, describes the next action, and gives a clear update window.
+    - id: share-generic-investigation
+      message: We are investigating the reporting issue and will share more information when available.
+      quality: acceptable
+      explanation: It acknowledges the issue but omits the known scope, impact, and next checkpoint.
+    - id: blame-browser-update
+      message: A browser update caused this, so please reinstall the browser while we close the case.
+      quality: poor
+      explanation: It presents an unproven distractor as fact and recommends disruptive work before reviewing stronger evidence.
+debrief:
+  root_cause_explanation: Both users authenticated successfully, but a bulk cleanup removed the role that authorized reporting. Restoring that role resolves the immediate impact; reviewing future role changes addresses recurrence.
+  evidence_chain:
+    - service-status
+    - affected-user-scope
+    - authentication-events
+    - role-configuration
+    - role-audit-history
+  efficient_path:
+    - kind: framework_step
+      ref: establish-impact
+    - kind: evidence
+      ref: service-status
+    - kind: framework_step
+      ref: determine-scope
+    - kind: evidence
+      ref: affected-user-scope
+    - kind: evidence
+      ref: authentication-events
+    - kind: framework_step
+      ref: test-hypothesis
+    - kind: evidence
+      ref: role-configuration
+    - kind: framework_step
+      ref: check-recent-changes
+    - kind: evidence
+      ref: role-audit-history
+  transferable_lesson: A successful login proves authentication, not authorization. When a feature fails for only some users, compare their access configuration with working peers and confirm recent changes in the audit trail.

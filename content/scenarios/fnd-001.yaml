@@ -1,0 +1,178 @@
+id: fnd-001
+version: 1
+title: One user cannot access a feature
+domain: fundamentals
+difficulty: beginner
+estimated_minutes: 7
+learning:
+  concepts:
+    - scope-comparison
+    - entitlement-verification
+    - evidence-driven-troubleshooting
+  objectives:
+    - Use affected-versus-working comparisons to narrow the failing layer.
+    - Verify entitlement state before changing shared infrastructure.
+customer_context:
+  - Alder & Finch is a fictional retailer whose finance team uses a forecasting workspace.
+  - A newly assigned analyst needs forecasting access for the weekly planning cycle.
+brief:
+  severity: medium
+  business_impact: One analyst cannot contribute to the weekly forecast, while the rest of the finance team remains productive.
+  symptom_variants:
+    - One finance analyst cannot open forecasting, although teammates can use it normally.
+    - The analyst reaches the workspace but sees an access message when selecting forecasting.
+root_cause:
+  id: forecasting-entitlement-missing
+  category: provisioning
+  explanation: The analyst's onboarding request did not include the forecasting entitlement, so the account was created without feature access.
+hypotheses:
+  - id: forecasting-entitlement-missing
+    label: The analyst was never assigned the forecasting entitlement.
+  - id: forecasting-service-degradation
+    label: The forecasting service is degraded for the finance workspace.
+  - id: analyst-session-stale
+    label: The analyst has a stale session that has not loaded current access.
+  - id: network-path-blocked
+    label: The analyst's network path blocks the forecasting feature.
+evidence:
+  - id: service-status
+    tool: service_status
+    cost: 1
+    relevance: supporting
+    unlock_after: []
+    content:
+      kind: status
+      state: operational
+      detail: Forecasting is healthy, with normal availability and latency.
+    explanation: Healthy service telemetry makes a broad forecasting incident unlikely.
+  - id: peer-user-scope
+    tool: user_scope
+    cost: 1
+    relevance: critical
+    unlock_after: []
+    content:
+      kind: table
+      columns:
+        - subject
+        - workspace_access
+        - forecasting_access
+      rows:
+        - subject: Affected analyst
+          workspace_access: Available
+          forecasting_access: Denied
+        - subject: Three finance peers
+          workspace_access: Available
+          forecasting_access: Available
+    explanation: A working peer comparison localizes the problem to the analyst's feature access rather than shared service or workspace layers.
+  - id: entitlement-configuration
+    tool: role_configuration
+    cost: 2
+    relevance: critical
+    unlock_after:
+      - peer-user-scope
+    content:
+      kind: key_value
+      values:
+        analyst_account: Active
+        finance_workspace: Assigned
+        forecasting_entitlement: Not assigned
+        peer_forecasting_entitlement: Assigned
+    explanation: The configuration comparison shows the exact access difference between the analyst and working peers.
+  - id: entitlement-audit-history
+    tool: audit_log
+    cost: 2
+    relevance: critical
+    unlock_after:
+      - entitlement-configuration
+    content:
+      kind: timeline
+      events:
+        - time: Five days ago 10:15
+          event: The analyst's account and finance workspace membership were created.
+        - time: Five days ago 10:16
+          event: Onboarding completed without a forecasting entitlement assignment.
+        - time: Today 09:20
+          event: The analyst's first forecasting access attempt was denied.
+    explanation: The audit history confirms the entitlement was omitted during onboarding rather than removed by a later change.
+  - id: earlier-cpu-signal
+    tool: service_status
+    cost: 1
+    relevance: red_herring
+    unlock_after: []
+    content:
+      kind: status
+      state: recovered
+      detail: Forecasting CPU was elevated for six minutes earlier in the morning and returned to normal before the analyst's access attempt.
+    explanation: The earlier signal is a fair lead to check, but its recovered timing and the healthy experience of peers do not match the current user-specific denial.
+red_herrings:
+  pool:
+    - id: elevated-cpu-earlier
+      label: Forecasting CPU was briefly elevated earlier in the morning.
+      explanation: The spike ended before the failure and cannot explain why peers retain access while one analyst receives a permission denial.
+  choose: 1
+remediation:
+  choices:
+    - id: assign-forecasting-entitlement
+      label: Confirm the analyst's approved job access and assign the forecasting entitlement.
+      phase: immediate
+      quality: correct
+      explanation: This repairs the missing user-level permission while preserving the service and other users' access.
+    - id: grant-finance-admin
+      label: Grant the analyst the finance administrator role to ensure access.
+      phase: immediate
+      quality: partial
+      explanation: It may enable forecasting but grants substantially more privilege than the analyst needs.
+    - id: restart-forecasting
+      label: Restart forecasting for the entire finance team.
+      phase: immediate
+      quality: incorrect
+      explanation: A restart disrupts working users and does not assign the missing entitlement.
+    - id: add-onboarding-entitlement-review
+      label: Add a role-based entitlement checklist and post-provisioning review to finance onboarding.
+      phase: prevention
+      quality: correct
+      explanation: A checklist plus verification catches missing feature assignments before a new user needs them.
+    - id: copy-peer-permissions
+      label: Automatically copy every permission from a selected peer during onboarding.
+      phase: prevention
+      quality: incorrect
+      explanation: Blind copying can overprovision access and bypass role-specific approval.
+communication:
+  choices:
+    - id: share-user-scoped-update
+      message: Forecasting is healthy and other finance users remain able to work. We isolated the issue to this analyst's feature access and are validating the approved entitlement before assigning it; we will update you within 20 minutes.
+      quality: excellent
+      explanation: It gives verified scope, protects least privilege, describes the action, and sets an update expectation.
+    - id: share-access-review
+      message: We found a user-specific access difference and are reviewing it now.
+      quality: acceptable
+      explanation: It is accurate but lacks the known business context and next update time.
+    - id: announce-outage
+      message: Forecasting is down for the finance team because CPU was high earlier.
+      quality: poor
+      explanation: It contradicts current service health and peer evidence while overstating customer impact.
+debrief:
+  root_cause_explanation: The analyst's account and workspace membership were healthy, but onboarding omitted the forecasting entitlement. A narrowly scoped entitlement assignment restores access without disturbing working peers.
+  evidence_chain:
+    - service-status
+    - peer-user-scope
+    - entitlement-configuration
+    - entitlement-audit-history
+  efficient_path:
+    - kind: framework_step
+      ref: establish-impact
+    - kind: evidence
+      ref: service-status
+    - kind: framework_step
+      ref: determine-scope
+    - kind: evidence
+      ref: peer-user-scope
+    - kind: framework_step
+      ref: test-hypothesis
+    - kind: evidence
+      ref: entitlement-configuration
+    - kind: framework_step
+      ref: check-recent-changes
+    - kind: evidence
+      ref: entitlement-audit-history
+  transferable_lesson: Scope narrows the failing layer. When one user fails while peers succeed, inspect that user's configuration and provisioning history before changing a healthy shared service.
