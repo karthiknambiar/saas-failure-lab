@@ -27,10 +27,10 @@ static architecture:
 content/scenarios/*.yaml
     ↓ YAML parse + Zod source schema
 semantic validation
-    ↓ deterministic normalization
-src/generated/scenario-index.json (public browse fields only)
-    ↓ build-time generation
-static Vite build in dist/
+    ├─ success gates TypeScript + Vite → static build in dist/
+    └─ deterministic normalization → committed public index
+                                   src/generated/scenario-index.json
+                                   (future browser integration)
 ```
 
 Future milestones will feed full validated scenario definitions into a
@@ -101,9 +101,11 @@ communication quality, and debrief content. Full validated definitions remain
 future engine inputs and are not emitted into the public browser index.
 
 `npm run validate:scenarios` fails on parsing, schema, or semantic errors.
-`npm run generate:scenarios` validates before writing, and production builds run
-generation before TypeScript and Vite. CI validates explicitly, regenerates the
-committed index, and fails when the result drifts from source control.
+`npm run generate:scenarios` validates before writing. Production builds run
+that command as a pre-build validation gate before TypeScript and Vite, but the
+Milestone 2 application does not import its generated index. CI validates
+explicitly, regenerates the committed index, and fails when the result drifts
+from source control.
 
 ### Accessibility as behavior
 
