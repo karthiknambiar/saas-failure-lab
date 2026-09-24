@@ -312,6 +312,21 @@ describe('validateScenarioDocuments', () => {
     },
   )
 
+  it('reports a full correct label across composed and decomposed Unicode', () => {
+    const scenario = createScenarioFixture() as ScenarioSource
+    scenario.hypotheses[0].label = 'The café role is missing.'
+    scenario.brief.symptom_variants = [
+      'Observed: The cafe\u0301 role is missing',
+    ]
+
+    expect(validateScenarioDocuments([document(scenario)])).toContainEqual({
+      filePath: 'content/scenarios/iam-001.yaml',
+      path: 'brief.symptom_variants[0]',
+      message:
+        'Public symptom reveals correct hypothesis label "The café role is missing.".',
+    })
+  })
+
   it('sorts issues deterministically without mutating the documents', () => {
     const first = createScenarioFixture() as ScenarioSource
     first.root_cause.id = 'missing-first'

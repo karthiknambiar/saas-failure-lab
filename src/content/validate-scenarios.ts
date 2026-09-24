@@ -15,6 +15,7 @@ function compareText(left: string, right: string): number {
 
 function canonicalizeDirectText(value: string): string {
   return value
+    .normalize('NFKC')
     .toLowerCase()
     .replace(/\p{P}+/gu, ' ')
     .replace(/\s+/gu, ' ')
