@@ -267,6 +267,19 @@ describe('validateScenarioDocuments', () => {
     })
   })
 
+  it('reports a root-cause ID separated by punctuation and whitespace', () => {
+    const scenario = createScenarioFixture() as ScenarioSource
+    scenario.brief.symptom_variants = [
+      'Cause code: REPORTING role—removed was exposed.',
+    ]
+
+    expect(validateScenarioDocuments([document(scenario)])).toContainEqual({
+      filePath: 'content/scenarios/iam-001.yaml',
+      path: 'brief.symptom_variants[0]',
+      message: 'Public symptom reveals root-cause ID "reporting-role-removed".',
+    })
+  })
+
   it('reports a symptom that directly contains the full correct hypothesis label', () => {
     const scenario = createScenarioFixture() as ScenarioSource
     scenario.brief.symptom_variants = [
@@ -280,6 +293,24 @@ describe('validateScenarioDocuments', () => {
         'Public symptom reveals correct hypothesis label "The affected users lost their reporting role.".',
     })
   })
+
+  it.each([
+    'Status: The affected users lost their reporting role',
+    'Status: The affected users—lost   their reporting role!',
+  ])(
+    'reports a full correct hypothesis label after punctuation normalization: %s',
+    (symptom) => {
+      const scenario = createScenarioFixture() as ScenarioSource
+      scenario.brief.symptom_variants = [symptom]
+
+      expect(validateScenarioDocuments([document(scenario)])).toContainEqual({
+        filePath: 'content/scenarios/iam-001.yaml',
+        path: 'brief.symptom_variants[0]',
+        message:
+          'Public symptom reveals correct hypothesis label "The affected users lost their reporting role.".',
+      })
+    },
+  )
 
   it('sorts issues deterministically without mutating the documents', () => {
     const first = createScenarioFixture() as ScenarioSource

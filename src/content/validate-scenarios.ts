@@ -13,6 +13,14 @@ function compareText(left: string, right: string): number {
   return 0
 }
 
+function canonicalizeDirectText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\p{P}+/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .trim()
+}
+
 function addIssue(
   issues: ScenarioIssue[],
   filePath: string,
@@ -256,13 +264,15 @@ function validateDocument(
   const correctHypothesis = scenario.hypotheses.find(
     ({ id }) => id.toLowerCase() === scenario.root_cause.id.toLowerCase(),
   )
-  const rootCauseId = scenario.root_cause.id.toLowerCase()
-  const correctLabel = correctHypothesis?.label.toLowerCase()
+  const rootCauseId = canonicalizeDirectText(scenario.root_cause.id)
+  const correctLabel = correctHypothesis
+    ? canonicalizeDirectText(correctHypothesis.label)
+    : undefined
 
   scenario.brief.symptom_variants.forEach((symptom, index) => {
-    const normalizedSymptom = symptom.toLowerCase()
+    const normalizedSymptom = canonicalizeDirectText(symptom)
     const path = `brief.symptom_variants[${index}]`
-    if (normalizedSymptom.includes(rootCauseId)) {
+    if (rootCauseId && normalizedSymptom.includes(rootCauseId)) {
       addIssue(
         issues,
         filePath,
