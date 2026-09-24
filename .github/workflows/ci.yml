@@ -34,6 +34,14 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Validate scenarios
+        run: npm run validate:scenarios
+
+      - name: Verify generated scenario index
+        run: |
+          npm run generate:scenarios
+          git diff --exit-code -- src/generated/scenario-index.json
+
       - name: Run unit tests
         run: npm test
 

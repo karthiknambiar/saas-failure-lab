@@ -1,0 +1,28 @@
+[
+  {
+    "id": "fnd-001",
+    "title": "One user cannot access a feature",
+    "domain": "fundamentals",
+    "difficulty": "beginner",
+    "estimatedMinutes": 7,
+    "concepts": [
+      "entitlement-verification",
+      "evidence-driven-troubleshooting",
+      "scope-comparison"
+    ],
+    "symptomSummary": "One finance analyst cannot open forecasting, although teammates can use it normally."
+  },
+  {
+    "id": "iam-001",
+    "title": "Login works, feature does not",
+    "domain": "identity",
+    "difficulty": "beginner",
+    "estimatedMinutes": 8,
+    "concepts": [
+      "authentication-vs-authorization",
+      "evidence-driven-troubleshooting",
+      "role-based-access-control"
+    ],
+    "symptomSummary": "Two finance users can sign in, but reporting shows an access-denied message."
+  }
+]
