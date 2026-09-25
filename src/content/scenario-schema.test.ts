@@ -24,6 +24,54 @@ describe('scenarioSourceSchema', () => {
     expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
   })
 
+  it('rejects empty customer-name variations', () => {
+    const scenario = createScenarioFixture()
+    scenario.variations.customer_names = []
+
+    expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
+  })
+
+  it('rejects empty timestamp-offset variations', () => {
+    const scenario = createScenarioFixture()
+    scenario.variations.timestamp_offsets_minutes = []
+
+    expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
+  })
+
+  it.each([-181, 181])(
+    'rejects an out-of-range timestamp offset: %s',
+    (offset) => {
+      const scenario = createScenarioFixture()
+      scenario.variations.timestamp_offsets_minutes = [offset]
+
+      expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
+    },
+  )
+
+  it.each([-366, 366])('rejects an out-of-range day offset: %s', (offset) => {
+    const scenario = createScenarioFixture()
+    const content = scenario.evidence[0].content
+    if (content.kind !== 'timeline')
+      throw new Error('Expected timeline content')
+    content.events[0].time.day_offset = offset
+
+    expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
+  })
+
+  it.each(['9:02', '24:00', '09:60'])(
+    'rejects an invalid timeline clock: %s',
+    (clock) => {
+      const scenario = createScenarioFixture()
+      const content = scenario.evidence[0].content
+      if (content.kind !== 'timeline') {
+        throw new Error('Expected timeline content')
+      }
+      content.events[0].time.clock = clock
+
+      expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
+    },
+  )
+
   it('rejects an unsupported evidence tool', () => {
     const scenario = createScenarioFixture()
     scenario.evidence[0].tool = 'unsupported_tool'

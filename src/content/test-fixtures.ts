@@ -12,7 +12,13 @@ export function createScenarioFixture() {
         'Distinguish authentication failures from authorization failures.',
       ],
     },
-    customer_context: ['The customer uses role-based access for reporting.'],
+    variations: {
+      customer_names: ['Northstar Components', 'Meridian Fabrication'],
+      timestamp_offsets_minutes: [0, 17, 43],
+    },
+    customer_context: [
+      '{{customerName}} uses role-based access for reporting.',
+    ],
     brief: {
       severity: 'medium',
       business_impact: 'Month-end reporting is blocked for two users.',
@@ -45,9 +51,13 @@ export function createScenarioFixture() {
         relevance: 'supporting',
         unlock_after: [],
         content: {
-          kind: 'status',
-          state: 'operational',
-          detail: 'All systems normal.',
+          kind: 'timeline',
+          events: [
+            {
+              time: { day_offset: 0, clock: '09:02' },
+              event: 'All systems reported normal.',
+            },
+          ],
         },
         explanation: 'A broad outage is unlikely.',
       },

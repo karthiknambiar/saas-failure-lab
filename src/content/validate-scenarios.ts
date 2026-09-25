@@ -53,6 +53,36 @@ function reportDuplicateIds(
   })
 }
 
+function reportUnsupportedTemplateTokens(
+  issues: ScenarioIssue[],
+  filePath: string,
+  customerContext: readonly string[],
+): void {
+  customerContext.forEach((value, index) => {
+    for (const match of value.matchAll(/{{[^{}]*}}/g)) {
+      const token = match[0]
+      if (token !== '{{customerName}}') {
+        addIssue(
+          issues,
+          filePath,
+          `customer_context[${index}]`,
+          `Unsupported template token "${token}". Use "{{customerName}}".`,
+        )
+      }
+    }
+
+    const valueWithoutTokens = value.replace(/{{[^{}]*}}/g, '')
+    if (/[{}]/.test(valueWithoutTokens)) {
+      addIssue(
+        issues,
+        filePath,
+        `customer_context[${index}]`,
+        'Malformed template syntax. Use "{{customerName}}".',
+      )
+    }
+  })
+}
+
 function canonicalCycle(cycle: readonly string[]): string {
   const nodes = cycle.slice(0, -1)
   const rotations = nodes.map((_, index) => [
@@ -132,6 +162,8 @@ function validateDocument(
       `Scenario ID "${scenario.id}" must match source name "${sourceName}".`,
     )
   }
+
+  reportUnsupportedTemplateTokens(issues, filePath, scenario.customer_context)
 
   reportDuplicateIds(
     issues,

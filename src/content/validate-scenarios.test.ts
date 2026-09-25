@@ -52,6 +52,41 @@ describe('validateScenarioDocuments', () => {
     ])
   })
 
+  it('accepts the supported customer-name template token', () => {
+    const scenario = createScenarioFixture() as ScenarioSource
+    scenario.customer_context = ['{{customerName}}']
+
+    expect(validateScenarioDocuments([document(scenario)])).toEqual([])
+  })
+
+  it.each(['{{companyName}}', '{{ customerName }}', '{{customer_name}}'])(
+    'reports an unsupported customer-context template token: %s',
+    (token) => {
+      const scenario = createScenarioFixture() as ScenarioSource
+      scenario.customer_context = [token]
+
+      expect(validateScenarioDocuments([document(scenario)])).toContainEqual({
+        filePath: 'content/scenarios/iam-001.yaml',
+        path: 'customer_context[0]',
+        message: `Unsupported template token "${token}". Use "{{customerName}}".`,
+      })
+    },
+  )
+
+  it.each(['{{customer{Name}}}', '{{companyName', '{{{customerName}}}'])(
+    'reports malformed customer-context template syntax: %s',
+    (value) => {
+      const scenario = createScenarioFixture() as ScenarioSource
+      scenario.customer_context = [value]
+
+      expect(validateScenarioDocuments([document(scenario)])).toContainEqual({
+        filePath: 'content/scenarios/iam-001.yaml',
+        path: 'customer_context[0]',
+        message: 'Malformed template syntax. Use "{{customerName}}".',
+      })
+    },
+  )
+
   it.each([
     {
       name: 'hypothesis',

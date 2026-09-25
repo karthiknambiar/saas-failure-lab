@@ -12,8 +12,17 @@ learning:
   objectives:
     - Distinguish successful authentication from failed authorization.
     - Use scope and audit evidence to identify an access regression.
+variations:
+  customer_names:
+    - Northstar Components
+    - Meridian Fabrication
+    - Cedar Ridge Works
+  timestamp_offsets_minutes:
+    - 0
+    - 17
+    - 43
 customer_context:
-  - Northstar Components is a fictional manufacturer using role-based access for its finance workspace.
+  - '{{customerName}} is a fictional manufacturer using role-based access for its finance workspace.'
   - The finance team is completing its month-end reporting cycle.
 brief:
   severity: high
@@ -73,11 +82,11 @@ evidence:
     content:
       kind: timeline
       events:
-        - time: 09:02
+        - time: { day_offset: 0, clock: '09:02' }
           event: First affected user completed sign-in successfully.
-        - time: 09:05
+        - time: { day_offset: 0, clock: '09:05' }
           event: Second affected user completed sign-in successfully.
-        - time: 09:06
+        - time: { day_offset: 0, clock: '09:06' }
           event: Reporting authorization checks returned access denied.
     explanation: Successful sign-ins rule out an authentication failure and direct the investigation toward authorization.
   - id: role-configuration
@@ -102,11 +111,11 @@ evidence:
     content:
       kind: timeline
       events:
-        - time: Previous day 16:40
+        - time: { day_offset: -1, clock: '16:40' }
           event: An approved finance-group cleanup began.
-        - time: Previous day 16:43
+        - time: { day_offset: -1, clock: '16:43' }
           event: The reporting role was removed from both affected users during the cleanup.
-        - time: Previous day 16:45
+        - time: { day_offset: -1, clock: '16:45' }
           event: The cleanup completed without a post-change access review.
     explanation: The audit trail identifies the change that caused the authorization regression and the missing verification step.
 red_herrings:

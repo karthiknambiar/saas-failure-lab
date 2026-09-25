@@ -12,8 +12,17 @@ learning:
   objectives:
     - Use affected-versus-working comparisons to narrow the failing layer.
     - Verify entitlement state before changing shared infrastructure.
+variations:
+  customer_names:
+    - Alder & Finch
+    - Harbor & Pine
+    - Juniper Row
+  timestamp_offsets_minutes:
+    - 0
+    - 19
+    - 41
 customer_context:
-  - Alder & Finch is a fictional retailer whose finance team uses a forecasting workspace.
+  - '{{customerName}} is a fictional retailer whose finance team uses a forecasting workspace.'
   - A newly assigned analyst needs forecasting access for the weekly planning cycle.
 brief:
   severity: medium
@@ -87,11 +96,11 @@ evidence:
     content:
       kind: timeline
       events:
-        - time: Five days ago 10:15
+        - time: { day_offset: -5, clock: '10:15' }
           event: The analyst's account and finance workspace membership were created.
-        - time: Five days ago 10:16
+        - time: { day_offset: -5, clock: '10:16' }
           event: Onboarding completed without a forecasting entitlement assignment.
-        - time: Today 09:20
+        - time: { day_offset: 0, clock: '09:20' }
           event: The analyst's first forecasting access attempt was denied.
     explanation: The audit history confirms the entitlement was omitted during onboarding rather than removed by a later change.
   - id: earlier-cpu-signal

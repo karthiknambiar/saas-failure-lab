@@ -4,6 +4,20 @@ import { frameworkSteps, scenarioTools } from './scenario-tools'
 
 const nonemptyString = z.string().trim().min(1)
 const nestedId = z.string().regex(/^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/)
+const timelineTimeSchema = z
+  .object({
+    day_offset: z.number().int().min(-365).max(365),
+    clock: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/),
+  })
+  .strict()
+const variationsSchema = z
+  .object({
+    customer_names: z.array(nonemptyString).min(1),
+    timestamp_offsets_minutes: z
+      .array(z.number().int().min(-180).max(180))
+      .min(1),
+  })
+  .strict()
 
 const evidenceContentSchema = z.discriminatedUnion('kind', [
   z
@@ -48,7 +62,7 @@ const evidenceContentSchema = z.discriminatedUnion('kind', [
         .array(
           z
             .object({
-              time: nonemptyString,
+              time: timelineTimeSchema,
               event: nonemptyString,
             })
             .strict(),
@@ -94,6 +108,7 @@ export const scenarioSourceSchema = z
         objectives: z.array(nonemptyString).min(1),
       })
       .strict(),
+    variations: variationsSchema,
     customer_context: z.array(nonemptyString).min(1),
     brief: z
       .object({
