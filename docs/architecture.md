@@ -20,24 +20,23 @@ There is no runtime backend, authentication system, database, remote AI dependen
 
 ## Product boundaries
 
-Milestone 2 implements the content and validation boundary while preserving the
+Milestone 3 implements deterministic scenario composition while preserving the
 static architecture:
 
 ```text
 content/scenarios/*.yaml
-    ↓ YAML parse + Zod source schema
-semantic validation
-    ├─ success gates TypeScript + Vite → static build in dist/
-    └─ deterministic normalization → committed public index
-                                   src/generated/scenario-index.json
-                                   (future browser integration)
+    ↓ YAML parse + Zod source schema + semantic validation
+validated ScenarioSource + seed
+    ↓ pure deterministic composer
+source-isolated ScenarioInstance
+    ↓ future investigation engine and React presentation
+static HTML, CSS, and JavaScript in dist/
 ```
 
-Future milestones will feed full validated scenario definitions into a
-framework-independent deterministic engine, then React presentation and
-versioned browser-local progress storage. Runtime evidence unlocking,
-composition, investigation state, scoring, and debrief behavior remain future
-engine work.
+The content pipeline and deterministic composer are implemented. Future
+milestones will add investigation state and scoring, then React presentation
+and versioned browser-local progress storage. Runtime evidence unlocking and
+debrief behavior also remain future engine work.
 
 The boundaries have clear responsibilities:
 
@@ -47,9 +46,9 @@ The boundaries have clear responsibilities:
 - **Presentation:** Accessible React views that render engine state without embedding answer keys or scoring rules.
 - **Storage:** A versioned adapter for local progress with corruption recovery and migrations.
 
-The routing, presentation, content, and validation boundaries now exist. The
-engine and storage remain planned boundaries rather than empty speculative
-interfaces.
+The routing, presentation, content, validation, and composition boundaries now
+exist. Investigation, scoring, and storage remain planned boundaries rather
+than empty speculative interfaces.
 
 ## Architecture decisions
 
@@ -78,13 +77,24 @@ when their milestone requires them.
 
 The application shell owns skip navigation, global navigation, the main landmark, and the footer. Pages own product-specific composition. Small primitives own native button/link semantics, cards, badges, and evidence-panel structure. CSS tokens and global styles own shared visual decisions, responsive behavior, focus treatment, and reduced-motion handling.
 
-The scenario browser remains intentionally inactive: Milestone 2 validates and
-generates content but does not connect the index to the browser or add gameplay.
-Its controls remain disabled and explanatory.
+The scenario browser remains intentionally inactive: the current application
+does not connect the index to the browser or add gameplay. Its controls remain
+disabled and explanatory.
 
 ### Framework-independent domain behavior
 
-Future composition, state transitions, and scoring will be plain TypeScript wherever practical. React will consume public engine results rather than own hidden business rules. This permits deterministic unit tests without rendering UI.
+Scenario composition is plain TypeScript. Future state transitions and scoring
+will remain framework-independent wherever practical. React will consume public
+engine results rather than own hidden business rules. This permits deterministic
+unit tests without rendering UI.
+
+### Deterministic scenario composition
+
+Milestone 3 uses explicit variation pools, structured timeline values, and
+fixed named seed streams. The composer is pure TypeScript and does not depend
+on React, browser APIs, the current clock, or runtime randomness. Independent
+dimension streams mean adding a future permitted dimension does not reshuffle
+existing dimensions for the same scenario version and seed.
 
 ### Build-time content validation
 
@@ -97,13 +107,13 @@ The committed public index contains exactly seven browse fields: ID, title,
 domain, difficulty, estimated minutes, concepts, and the first public symptom
 summary. It omits customer context, learning objectives, root causes,
 hypotheses, evidence and relevance, red herrings, remediation answers,
-communication quality, and debrief content. Full validated definitions remain
-future engine inputs and are not emitted into the public browser index.
+communication quality, and debrief content. Full validated definitions are
+composer inputs and are not emitted into the public browser index.
 
 `npm run validate:scenarios` fails on parsing, schema, or semantic errors.
 `npm run generate:scenarios` validates before writing. Production builds run
 that command as a pre-build validation gate before TypeScript and Vite, but the
-Milestone 2 application does not import its generated index. CI validates
+current application does not import its generated index. CI validates
 explicitly, regenerates the committed index, and fails when the result drifts
 from source control.
 
@@ -119,8 +129,9 @@ The shell uses semantic landmarks, a skip link, active-route semantics, a native
 - **Playwright:** keyboard, routing, mobile-navigation, clean-route, and responsive-width verification against a fresh production preview
 - **GitHub Actions:** repeatable clean-install quality gates
 
-Engine suites will be added with the behavior they verify. Scenario contract
-suites now cover both valid content and representative failure modes.
+Engine suites cover deterministic seed selection, scenario composition, and
+source isolation. Scenario contract suites cover both valid content and
+representative failure modes.
 
 ## Deployment
 
@@ -128,10 +139,9 @@ The deployment workflow builds on GitHub-hosted runners and publishes only `dist
 
 ## Current milestone boundary
 
-Milestone 2 includes the YAML/Zod scenario contract, pure parsing and semantic
-validation, deterministic normalization, two fictional scenarios, a committed
-public index, CLI/build/CI gates, and contributor documentation. The browser is
-still inactive and does not consume the index. This milestone explicitly
-excludes working filters, scenario composition, randomization, runtime evidence
-unlocking, investigation state, scoring, debrief gameplay, and progress
-persistence.
+Milestone 3 includes the fixed seed utility; deterministic customer, symptom,
+and timestamp composition; red-herring selection; source isolation; and
+deterministic unit and authored-content tests. The browser is still inactive
+and does not consume the public index or composed instances. Investigation
+state, evidence unlocking, scoring, persistence, seeded routes, daily
+challenges, and UI integration remain later work.

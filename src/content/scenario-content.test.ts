@@ -5,6 +5,7 @@ import path from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
+import { composeScenario } from '../engine/compose-scenario'
 import { normalizeScenarioIndex } from './normalize-scenario'
 import { parseScenario } from './parse-scenario'
 import {
@@ -43,6 +44,21 @@ describe('authored scenario content', () => {
     for (const { scenario } of documents) {
       expect(scenario.hypotheses.length).toBeGreaterThanOrEqual(3)
       expect(scenario.evidence.length).toBeGreaterThanOrEqual(3)
+    }
+
+    const seeds = ['alpha', 'seed-1', 'demo-seed'] as const
+    for (const { scenario } of documents) {
+      for (const seed of seeds) {
+        const first = composeScenario(scenario, seed)
+        const second = composeScenario(scenario, seed)
+
+        expect(first).toEqual(second)
+        expect(first.composition.seed).toBe(seed)
+        expect(first.scenario.customer_context.join(' ')).not.toContain('{{')
+        expect(first.scenario.red_herrings).toHaveLength(
+          scenario.red_herrings.choose,
+        )
+      }
     }
   })
 })

@@ -12,6 +12,8 @@ Every scenario has these top-level sections:
 - `id`, `version`, `title`, `domain`, `difficulty`, and `estimated_minutes`:
   browse metadata. `version` and `estimated_minutes` are positive integers.
 - `learning`: non-empty `concepts` and `objectives` lists.
+- `variations`: non-empty fictional `customer_names` and bounded
+  `timestamp_offsets_minutes` pools used by deterministic composition.
 - `customer_context`: non-empty fictional background details.
 - `brief`: the public `severity`, `business_impact`, and one or more
   `symptom_variants`.
@@ -52,8 +54,20 @@ communication correctness, and the debrief.
 
 Content shapes depend on `kind`: `text` has `text`; `status` has `state` and
 `detail`; `key_value` has a non-empty-string map in `values`; `table` has
-non-empty `columns` and `rows`; and `timeline` has `events`, each with `time`
-and `event`.
+non-empty `columns` and `rows`; and `timeline` has `events`, each with an
+`event` string and structured `time`: `day_offset` is an integer from `-365`
+through `365`, and `clock` uses strict 24-hour `HH:mm`. The composer selects one
+integer timestamp offset from `-180` through `180` minutes and applies it
+consistently to every timeline event.
+
+## Deterministic variation
+
+Every scenario declares at least one fictional customer name and timestamp
+offset. Use the exact `{{customerName}}` token where the chosen customer should
+appear in `customer_context`; other template tokens are rejected. Customer,
+symptom, timestamp, and red-herring choices are independently derived from the
+scenario ID, version, and seed. Do not encode root-cause or evidence changes as
+variations.
 
 ## Relationships and safeguards
 
@@ -119,8 +133,11 @@ estimated_minutes: 6
 learning:
   concepts: [request-scope]
   objectives: [Compare a failing workspace with a working workspace.]
+variations:
+  customer_names: [Lumen Harbor, Summit Vale]
+  timestamp_offsets_minutes: [0, 20]
 customer_context:
-  - Lumen Harbor is a fictional analytics company using scheduled exports.
+  - '{{customerName}} is a fictional analytics company using scheduled exports.'
 brief:
   severity: medium
   business_impact: One workspace cannot finish its daily fictional export.

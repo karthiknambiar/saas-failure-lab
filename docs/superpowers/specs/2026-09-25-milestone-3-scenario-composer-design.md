@@ -92,7 +92,7 @@ Customer context may contain the exact token `{{customerName}}`:
 
 ```yaml
 customer_context:
-  - "{{customerName}} is a fictional manufacturer using role-based access."
+  - '{{customerName}} is a fictional manufacturer using role-based access.'
 ```
 
 The content validator rejects unknown `{{...}}` tokens. This intentionally does
@@ -103,7 +103,7 @@ Timeline events replace display-oriented time strings with structured values:
 ```yaml
 time:
   day_offset: 0
-  clock: "09:02"
+  clock: '09:02'
 ```
 
 `day_offset` is relative to the incident day and `clock` is strict 24-hour

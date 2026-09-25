@@ -40,6 +40,7 @@ No package, route, component, generated browser bundle, storage adapter, or depl
 ### Task 1: Extend and migrate the authored scenario contract
 
 **Files:**
+
 - Modify: `src/content/scenario-schema.test.ts`
 - Modify: `src/content/validate-scenarios.test.ts`
 - Modify: `src/content/test-fixtures.ts`
@@ -107,30 +108,41 @@ it('requires non-empty customer-name and timestamp-offset pools', () => {
   expect(scenarioSourceSchema.safeParse(noOffsets).success).toBe(false)
 })
 
-it.each([-181, 181])('rejects timestamp offset %i outside the safe bound', (offset) => {
-  const scenario = createScenarioFixture()
-  scenario.variations.timestamp_offsets_minutes = [offset]
+it.each([-181, 181])(
+  'rejects timestamp offset %i outside the safe bound',
+  (offset) => {
+    const scenario = createScenarioFixture()
+    scenario.variations.timestamp_offsets_minutes = [offset]
 
-  expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
-})
+    expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
+  },
+)
 
-it.each([-366, 366])('rejects timeline day offset %i outside the safe bound', (dayOffset) => {
-  const scenario = createScenarioFixture()
-  const content = scenario.evidence[0].content
-  if (content.kind !== 'timeline') throw new Error('Expected timeline fixture')
-  content.events[0].time.day_offset = dayOffset
+it.each([-366, 366])(
+  'rejects timeline day offset %i outside the safe bound',
+  (dayOffset) => {
+    const scenario = createScenarioFixture()
+    const content = scenario.evidence[0].content
+    if (content.kind !== 'timeline')
+      throw new Error('Expected timeline fixture')
+    content.events[0].time.day_offset = dayOffset
 
-  expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
-})
+    expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
+  },
+)
 
-it.each(['9:02', '24:00', '09:60'])('rejects malformed timeline clock %s', (clock) => {
-  const scenario = createScenarioFixture()
-  const content = scenario.evidence[0].content
-  if (content.kind !== 'timeline') throw new Error('Expected timeline fixture')
-  content.events[0].time.clock = clock
+it.each(['9:02', '24:00', '09:60'])(
+  'rejects malformed timeline clock %s',
+  (clock) => {
+    const scenario = createScenarioFixture()
+    const content = scenario.evidence[0].content
+    if (content.kind !== 'timeline')
+      throw new Error('Expected timeline fixture')
+    content.events[0].time.clock = clock
 
-  expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
-})
+    expect(scenarioSourceSchema.safeParse(scenario).success).toBe(false)
+  },
+)
 ```
 
 - [ ] **Step 3: Write failing semantic token tests**
@@ -255,18 +267,18 @@ variations:
 Change its first context line to:
 
 ```yaml
-  - "{{customerName}} is a fictional manufacturer using role-based access for its finance workspace."
+- '{{customerName}} is a fictional manufacturer using role-based access for its finance workspace.'
 ```
 
 Replace its six timeline `time` values, preserving the authored order:
 
 ```yaml
-time: { day_offset: 0, clock: "09:02" }
-time: { day_offset: 0, clock: "09:05" }
-time: { day_offset: 0, clock: "09:06" }
-time: { day_offset: -1, clock: "16:40" }
-time: { day_offset: -1, clock: "16:43" }
-time: { day_offset: -1, clock: "16:45" }
+time: { day_offset: 0, clock: '09:02' }
+time: { day_offset: 0, clock: '09:05' }
+time: { day_offset: 0, clock: '09:06' }
+time: { day_offset: -1, clock: '16:40' }
+time: { day_offset: -1, clock: '16:43' }
+time: { day_offset: -1, clock: '16:45' }
 ```
 
 - [ ] **Step 8: Migrate FND-001 to the explicit contract**
@@ -288,15 +300,15 @@ variations:
 Change its first context line to:
 
 ```yaml
-  - "{{customerName}} is a fictional retailer whose finance team uses a forecasting workspace."
+- '{{customerName}} is a fictional retailer whose finance team uses a forecasting workspace.'
 ```
 
 Replace its three timeline `time` values:
 
 ```yaml
-time: { day_offset: -5, clock: "10:15" }
-time: { day_offset: -5, clock: "10:16" }
-time: { day_offset: 0, clock: "09:20" }
+time: { day_offset: -5, clock: '10:15' }
+time: { day_offset: -5, clock: '10:16' }
+time: { day_offset: 0, clock: '09:20' }
 ```
 
 - [ ] **Step 9: Verify the migrated contract**
@@ -322,6 +334,7 @@ git commit -m "feat(content): declare safe scenario variations"
 ### Task 2: Add the fixed deterministic seed primitive
 
 **Files:**
+
 - Create: `src/engine/seed.test.ts`
 - Create: `src/engine/seed.ts`
 
@@ -351,14 +364,19 @@ describe('normalizeSeed', () => {
     expect(normalizeSeed('  demo-seed  ')).toBe('demo-seed')
   })
 
-  it.each(['', '   ', 'x'.repeat(129)])('rejects invalid seed input', (seed) => {
-    expect(() => normalizeSeed(seed)).toThrow(InvalidSeedError)
-  })
+  it.each(['', '   ', 'x'.repeat(129)])(
+    'rejects invalid seed input',
+    (seed) => {
+      expect(() => normalizeSeed(seed)).toThrow(InvalidSeedError)
+    },
+  )
 })
 
 describe('deterministic selection', () => {
   it('pins the derivation algorithm', () => {
-    expect(deriveSeed({ ...scope, dimension: 'customer-name' })).toBe(1095030276)
+    expect(deriveSeed({ ...scope, dimension: 'customer-name' })).toBe(
+      1095030276,
+    )
   })
 
   it('selects the same index for the same named stream', () => {
@@ -367,13 +385,21 @@ describe('deterministic selection', () => {
   })
 
   it('samples unique indices without replacement in source order', () => {
-    expect(selectIndices({ ...scope, dimension: 'red-herrings' }, 5, 2)).toEqual([1, 3])
+    expect(
+      selectIndices({ ...scope, dimension: 'red-herrings' }, 5, 2),
+    ).toEqual([1, 3])
   })
 
   it('accepts an empty sample but rejects impossible selections', () => {
-    expect(selectIndices({ ...scope, dimension: 'red-herrings' }, 0, 0)).toEqual([])
-    expect(() => selectIndex({ ...scope, dimension: 'customer-name' }, 0)).toThrow(RangeError)
-    expect(() => selectIndices({ ...scope, dimension: 'red-herrings' }, 2, 3)).toThrow(RangeError)
+    expect(
+      selectIndices({ ...scope, dimension: 'red-herrings' }, 0, 0),
+    ).toEqual([])
+    expect(() =>
+      selectIndex({ ...scope, dimension: 'customer-name' }, 0),
+    ).toThrow(RangeError)
+    expect(() =>
+      selectIndices({ ...scope, dimension: 'red-herrings' }, 2, 3),
+    ).toThrow(RangeError)
   })
 })
 ```
@@ -484,10 +510,7 @@ export function selectIndices(
   const nextUint32 = createUint32Stream(deriveSeed(scope))
   for (let index = indices.length - 1; index > 0; index -= 1) {
     const swapIndex = nextUint32() % (index + 1)
-    ;[indices[index], indices[swapIndex]] = [
-      indices[swapIndex],
-      indices[index],
-    ]
+    ;[indices[index], indices[swapIndex]] = [indices[swapIndex], indices[index]]
   }
 
   return indices.slice(0, selectionCount).sort((left, right) => left - right)
@@ -521,6 +544,7 @@ git commit -m "feat(engine): add deterministic seed selection"
 ### Task 3: Compose source-isolated scenario instances
 
 **Files:**
+
 - Create: `src/engine/scenario-instance.ts`
 - Create: `src/engine/compose-scenario.test.ts`
 - Create: `src/engine/compose-scenario.ts`
@@ -672,7 +696,8 @@ describe('composeScenario', () => {
     const scenario = fixture()
     scenario.variations.timestamp_offsets_minutes = [120]
     const content = scenario.evidence[0].content
-    if (content.kind !== 'timeline') throw new Error('Expected timeline fixture')
+    if (content.kind !== 'timeline')
+      throw new Error('Expected timeline fixture')
     content.events = [
       { time: { day_offset: -1, clock: '23:30' }, event: 'Earlier event' },
       { time: { day_offset: 0, clock: '23:30' }, event: 'Later event' },
@@ -680,7 +705,8 @@ describe('composeScenario', () => {
 
     const instance = composeScenario(scenario, 'rollover')
     const resolved = instance.scenario.evidence[0].content
-    if (resolved.kind !== 'timeline') throw new Error('Expected timeline result')
+    if (resolved.kind !== 'timeline')
+      throw new Error('Expected timeline result')
 
     expect(resolved.events.map(({ time }) => time)).toEqual([
       'Today 01:30',
@@ -691,7 +717,10 @@ describe('composeScenario', () => {
   it('selects unique red herrings in source order', () => {
     const instance = composeScenario(fixture(), 'demo-seed')
 
-    expect(instance.composition.selectedRedHerringIds).toEqual(['bravo', 'delta'])
+    expect(instance.composition.selectedRedHerringIds).toEqual([
+      'bravo',
+      'delta',
+    ])
     expect(instance.scenario.red_herrings.map(({ id }) => id)).toEqual([
       'bravo',
       'delta',
@@ -742,11 +771,7 @@ import type {
 
 const MINUTES_PER_DAY = 24 * 60
 
-function scope(
-  source: ScenarioSource,
-  seed: string,
-  dimension: string,
-) {
+function scope(source: ScenarioSource, seed: string, dimension: string) {
   return {
     scenarioId: source.id,
     scenarioVersion: source.version,
@@ -931,6 +956,7 @@ git commit -m "feat(engine): compose deterministic scenarios"
 ### Task 4: Prove authored scenarios compose and document the boundary
 
 **Files:**
+
 - Modify: `src/content/scenario-content.test.ts`
 - Modify: `docs/scenario-authoring.md`
 - Modify: `docs/architecture.md`
@@ -1010,7 +1036,7 @@ variations:
   customer_names: [Lumen Harbor, Summit Vale]
   timestamp_offsets_minutes: [0, 20]
 customer_context:
-  - "{{customerName}} is a fictional analytics company using scheduled exports."
+  - '{{customerName}} is a fictional analytics company using scheduled exports.'
 ```
 
 - [ ] **Step 4: Document the implemented engine boundary**
