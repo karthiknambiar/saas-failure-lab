@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import type { ScenarioSource } from '../content/scenario-schema'
 import { createScenarioFixture } from '../content/test-fixtures'
-import { composeScenario } from './compose-scenario'
+import { ScenarioCompositionError, composeScenario } from './compose-scenario'
 import type { ScenarioInstance } from './scenario-instance'
+import { InvalidSeedError } from './seed'
 
 function scenarioFixture(): ScenarioSource {
   const scenario = createScenarioFixture() as ScenarioSource
@@ -50,6 +51,27 @@ function invariantProjection(instance: ScenarioInstance) {
           : content,
     })),
   }
+}
+
+function expectInvalidSource(
+  source: ScenarioSource,
+  expectedMessage: string,
+): void {
+  let thrown: unknown
+
+  try {
+    composeScenario(source, 'demo-seed')
+  } catch (error) {
+    thrown = error
+  }
+
+  expect(thrown).toBeInstanceOf(ScenarioCompositionError)
+  expect(thrown).toMatchObject({
+    name: 'ScenarioCompositionError',
+    code: 'INVALID_SCENARIO_SOURCE',
+    message: expectedMessage,
+  })
+  expect((thrown as ScenarioCompositionError).cause).toBeInstanceOf(RangeError)
 }
 
 describe('composeScenario', () => {
@@ -197,11 +219,110 @@ describe('composeScenario', () => {
 
   it('returns no red herrings when the source chooses zero', () => {
     const source = scenarioFixture()
+    source.red_herrings.pool = []
     source.red_herrings.choose = 0
+    const instance = composeScenario(source, 'demo-seed')
 
-    expect(composeScenario(source, 'demo-seed').scenario.red_herrings).toEqual(
-      [],
+    expect(instance.scenario.red_herrings).toEqual([])
+    expect(instance.composition.selectedRedHerringIds).toEqual([])
+  })
+
+  it('throws a typed composition error for an empty variation pool', () => {
+    const source = scenarioFixture()
+    source.variations.customer_names = []
+
+    expectInvalidSource(
+      source,
+      'Scenario "iam-001" cannot compose variations.customer_names: expected at least 1 option, received 0.',
     )
+  })
+
+  it('throws a typed composition error for an empty symptom pool', () => {
+    const source = scenarioFixture()
+    source.brief.symptom_variants = []
+
+    expectInvalidSource(
+      source,
+      'Scenario "iam-001" cannot compose brief.symptom_variants: expected at least 1 option, received 0.',
+    )
+  })
+
+  it('throws a typed composition error for an empty timestamp pool', () => {
+    const source = scenarioFixture()
+    source.variations.timestamp_offsets_minutes = []
+
+    expectInvalidSource(
+      source,
+      'Scenario "iam-001" cannot compose variations.timestamp_offsets_minutes: expected at least 1 option, received 0.',
+    )
+  })
+
+  it('throws a typed composition error for an impossible red-herring count', () => {
+    const source = scenarioFixture()
+    source.red_herrings.choose = source.red_herrings.pool.length + 1
+
+    expectInvalidSource(
+      source,
+      'Scenario "iam-001" cannot compose red_herrings.choose: expected an integer from 0 to pool length 5, received 6.',
+    )
+  })
+
+  it.each([-1, 1.5])(
+    'throws a typed composition error for invalid red-herring count %s',
+    (choose) => {
+      const source = scenarioFixture()
+      source.red_herrings.choose = choose
+
+      expectInvalidSource(
+        source,
+        `Scenario "iam-001" cannot compose red_herrings.choose: expected an integer from 0 to pool length 5, received ${choose}.`,
+      )
+    },
+  )
+
+  it('preserves the identity of an unexpected selection RangeError', () => {
+    const sentinel = new RangeError('unexpected length failure')
+    const source = scenarioFixture()
+    source.variations.customer_names = new Proxy(
+      source.variations.customer_names,
+      {
+        get(target, property, receiver) {
+          if (property === 'length') throw sentinel
+          return Reflect.get(target, property, receiver)
+        },
+      },
+    )
+    const clone = vi
+      .spyOn(globalThis, 'structuredClone')
+      .mockImplementationOnce((value) => value)
+
+    try {
+      let thrown: unknown
+
+      try {
+        composeScenario(source, 'demo-seed')
+      } catch (error) {
+        thrown = error
+      }
+
+      expect(thrown).toBe(sentinel)
+      expect(thrown).not.toBeInstanceOf(ScenarioCompositionError)
+    } finally {
+      clone.mockRestore()
+    }
+  })
+
+  it('preserves invalid-seed errors before composing a broken source', () => {
+    const source = scenarioFixture()
+    source.variations.customer_names = []
+
+    expect(() => composeScenario(source, '   ')).toThrowError(
+      expect.objectContaining({
+        name: 'InvalidSeedError',
+        code: 'INVALID_SEED',
+      }),
+    )
+    expect(() => composeScenario(source, '   ')).toThrow(InvalidSeedError)
   })
 
   it('does not mutate or share nested data with the source', () => {

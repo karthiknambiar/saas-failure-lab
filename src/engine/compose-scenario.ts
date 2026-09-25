@@ -7,6 +7,15 @@ import type {
 
 const MINUTES_PER_DAY = 1440
 
+export class ScenarioCompositionError extends Error {
+  readonly code = 'INVALID_SCENARIO_SOURCE'
+
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'ScenarioCompositionError'
+  }
+}
+
 function scope(source: ScenarioSource, seed: string, dimension: string) {
   return {
     scenarioId: source.id,
@@ -23,6 +32,91 @@ function selectOne<T>(
   dimension: string,
 ): T {
   return values[selectIndex(scope(source, seed, dimension), values.length)]
+}
+
+function throwInvalidSource(
+  source: ScenarioSource,
+  field: string,
+  expectation: string,
+  received: number,
+): never {
+  const detail = `${field}: expected ${expectation}, received ${received}.`
+
+  throw new ScenarioCompositionError(
+    `Scenario "${source.id}" cannot compose ${detail}`,
+    { cause: new RangeError(detail) },
+  )
+}
+
+function validateCompositionSource(source: ScenarioSource): void {
+  const customerNameCount = source.variations.customer_names.length
+  if (customerNameCount < 1) {
+    throwInvalidSource(
+      source,
+      'variations.customer_names',
+      'at least 1 option',
+      customerNameCount,
+    )
+  }
+
+  const symptomCount = source.brief.symptom_variants.length
+  if (symptomCount < 1) {
+    throwInvalidSource(
+      source,
+      'brief.symptom_variants',
+      'at least 1 option',
+      symptomCount,
+    )
+  }
+
+  const timestampOffsetCount =
+    source.variations.timestamp_offsets_minutes.length
+  if (timestampOffsetCount < 1) {
+    throwInvalidSource(
+      source,
+      'variations.timestamp_offsets_minutes',
+      'at least 1 option',
+      timestampOffsetCount,
+    )
+  }
+
+  const redHerringCount = source.red_herrings.pool.length
+  const redHerringChoiceCount = source.red_herrings.choose
+  if (
+    !Number.isInteger(redHerringChoiceCount) ||
+    redHerringChoiceCount < 0 ||
+    redHerringChoiceCount > redHerringCount
+  ) {
+    throwInvalidSource(
+      source,
+      'red_herrings.choose',
+      `an integer from 0 to pool length ${redHerringCount}`,
+      redHerringChoiceCount,
+    )
+  }
+}
+
+function selectScenarioVariations(source: ScenarioSource, seed: string) {
+  return {
+    customerName: selectOne(
+      source.variations.customer_names,
+      source,
+      seed,
+      'customer-name',
+    ),
+    symptom: selectOne(source.brief.symptom_variants, source, seed, 'symptom'),
+    timestampOffsetMinutes: selectOne(
+      source.variations.timestamp_offsets_minutes,
+      source,
+      seed,
+      'timestamp',
+    ),
+    selectedRedHerringIndices: selectIndices(
+      scope(source, seed, 'red-herrings'),
+      source.red_herrings.pool.length,
+      source.red_herrings.choose,
+    ),
+  }
 }
 
 function renderCustomerContext(
@@ -95,6 +189,7 @@ export function composeScenario(
 ): ScenarioInstance {
   const normalizedSeed = normalizeSeed(seed)
   const clonedSource = structuredClone(source)
+  validateCompositionSource(clonedSource)
   const {
     variations,
     customer_context,
@@ -103,29 +198,16 @@ export function composeScenario(
     red_herrings,
     ...invariants
   } = clonedSource
-  const customerName = selectOne(
-    variations.customer_names,
-    clonedSource,
-    normalizedSeed,
-    'customer-name',
+  void variations
+  const {
+    customerName,
+    symptom,
+    timestampOffsetMinutes,
+    selectedRedHerringIndices,
+  } = selectScenarioVariations(clonedSource, normalizedSeed)
+  const selectedRedHerrings = selectedRedHerringIndices.map((index) =>
+    structuredClone(red_herrings.pool[index]),
   )
-  const symptom = selectOne(
-    brief.symptom_variants,
-    clonedSource,
-    normalizedSeed,
-    'symptom',
-  )
-  const timestampOffsetMinutes = selectOne(
-    variations.timestamp_offsets_minutes,
-    clonedSource,
-    normalizedSeed,
-    'timestamp',
-  )
-  const selectedRedHerrings = selectIndices(
-    scope(clonedSource, normalizedSeed, 'red-herrings'),
-    red_herrings.pool.length,
-    red_herrings.choose,
-  ).map((index) => structuredClone(red_herrings.pool[index]))
   const scenario = {
     ...invariants,
     customer_context: renderCustomerContext(customer_context, customerName),
