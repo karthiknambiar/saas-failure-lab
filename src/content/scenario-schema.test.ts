@@ -10,6 +10,27 @@ describe('scenarioSourceSchema', () => {
     ).toBe(true)
   })
 
+  it('accepts an optional positive integer investigation budget', () => {
+    expect(
+      scenarioSourceSchema.safeParse({
+        ...createScenarioFixture(),
+        investigation_budget: 100,
+      }).success,
+    ).toBe(true)
+  })
+
+  it.each([0, -1, 1.5])(
+    'rejects an invalid investigation budget: %s',
+    (investigationBudget) => {
+      expect(
+        scenarioSourceSchema.safeParse({
+          ...createScenarioFixture(),
+          investigation_budget: investigationBudget,
+        }).success,
+      ).toBe(false)
+    },
+  )
+
   it('rejects an uppercase scenario ID', () => {
     const scenario = createScenarioFixture()
     scenario.id = 'IAM-001'

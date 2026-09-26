@@ -102,6 +102,7 @@ export const scenarioSourceSchema = z
     ]),
     difficulty: z.enum(['beginner', 'intermediate', 'advanced']),
     estimated_minutes: z.number().int().positive(),
+    investigation_budget: z.number().int().positive().optional(),
     learning: z
       .object({
         concepts: z.array(nonemptyString).min(1),
