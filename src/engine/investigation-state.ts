@@ -15,9 +15,18 @@ export interface BeginInvestigationAction {
   type: 'begin_investigation'
 }
 
-export type InvestigationAction = BeginInvestigationAction
+export interface OpenEvidenceAction {
+  sequence: number
+  type: 'open_evidence'
+  evidenceId: string
+  cost: number
+}
 
-export type InvestigationCommand = { type: 'begin_investigation' }
+export type InvestigationAction = BeginInvestigationAction | OpenEvidenceAction
+
+export type InvestigationCommand =
+  | { type: 'begin_investigation' }
+  | { type: 'open_evidence'; evidenceId: string }
 
 export interface InvestigationState {
   scenarioId: string

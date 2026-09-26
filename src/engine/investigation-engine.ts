@@ -1,4 +1,7 @@
-import type { ScenarioInstance } from './scenario-instance'
+import type {
+  ScenarioInstance,
+  ScenarioInstanceEvidence,
+} from './scenario-instance'
 import type {
   InvestigationCommand,
   InvestigationErrorCode,
@@ -61,35 +64,109 @@ export function createInvestigation(
   }
 }
 
+function requireInvestigating(state: InvestigationState): void {
+  if (state.status !== 'investigating') {
+    fail(
+      'INVALID_STATUS',
+      `Investigation command requires "investigating" status, received "${state.status}".`,
+    )
+  }
+}
+
+function findEvidence(
+  instance: ScenarioInstance,
+  evidenceId: string,
+): ScenarioInstanceEvidence {
+  const evidence = instance.scenario.evidence.find(
+    ({ id }) => id === evidenceId,
+  )
+  if (!evidence) {
+    fail(
+      'UNKNOWN_EVIDENCE',
+      `Scenario "${instance.scenario.id}" has no evidence "${evidenceId}".`,
+    )
+  }
+  return evidence
+}
+
+export function isEvidenceUnlocked(
+  evidence: ScenarioInstanceEvidence,
+  state: InvestigationState,
+): boolean {
+  const opened = new Set(state.openedEvidenceIds)
+  return evidence.unlock_after.every((id) => opened.has(id))
+}
+
+function openEvidence(
+  instance: ScenarioInstance,
+  state: InvestigationState,
+  evidenceId: string,
+): InvestigationState {
+  requireInvestigating(state)
+  const evidence = findEvidence(instance, evidenceId)
+  if (state.openedEvidenceIds.includes(evidenceId)) return state
+  if (!isEvidenceUnlocked(evidence, state)) {
+    fail('EVIDENCE_LOCKED', `Evidence "${evidenceId}" is still locked.`)
+  }
+  if (
+    state.budgetRemaining !== undefined &&
+    state.budgetRemaining < evidence.cost
+  ) {
+    fail(
+      'INSUFFICIENT_BUDGET',
+      `Evidence "${evidenceId}" costs ${evidence.cost}, but only ${state.budgetRemaining} remains.`,
+    )
+  }
+
+  const sequence = state.actions.length + 1
+  return {
+    ...state,
+    openedEvidenceIds: [...state.openedEvidenceIds, evidenceId],
+    actions: [
+      ...state.actions,
+      {
+        sequence,
+        type: 'open_evidence',
+        evidenceId,
+        cost: evidence.cost,
+      },
+    ],
+    budgetRemaining:
+      state.budgetRemaining === undefined
+        ? undefined
+        : state.budgetRemaining - evidence.cost,
+  }
+}
+
 export function applyInvestigationCommand(
   instance: ScenarioInstance,
   state: InvestigationState,
   command: InvestigationCommand,
 ): InvestigationState {
   assertInvestigationIdentity(instance, state)
-  const commandType = command.type
 
-  switch (commandType) {
-    case 'begin_investigation': {
-      if (state.status !== 'intro') {
-        fail(
-          'INVALID_STATUS',
-          `Cannot begin investigation while status is "${state.status}".`,
-        )
-      }
-
-      return {
-        ...state,
-        status: 'investigating',
-        actions: [
-          ...state.actions,
-          { sequence: state.actions.length + 1, type: commandType },
-        ],
-      }
+  if (command.type === 'begin_investigation') {
+    if (state.status !== 'intro') {
+      fail(
+        'INVALID_STATUS',
+        `Cannot begin investigation while status is "${state.status}".`,
+      )
     }
-    default: {
-      const exhaustive: never = commandType
-      return exhaustive
+
+    return {
+      ...state,
+      status: 'investigating',
+      actions: [
+        ...state.actions,
+        { sequence: state.actions.length + 1, type: command.type },
+      ],
     }
   }
+
+  if (command.type === 'open_evidence') {
+    return openEvidence(instance, state, command.evidenceId)
+  }
+
+  const exhaustive: never = command
+  return exhaustive
 }
