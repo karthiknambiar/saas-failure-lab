@@ -22,11 +22,30 @@ export interface OpenEvidenceAction {
   cost: number
 }
 
-export type InvestigationAction = BeginInvestigationAction | OpenEvidenceAction
+export interface BookmarkEvidenceAction {
+  sequence: number
+  type: 'bookmark_evidence' | 'unbookmark_evidence'
+  evidenceId: string
+}
+
+export interface SelectHypothesisAction {
+  sequence: number
+  type: 'select_hypothesis'
+  hypothesisId: string
+}
+
+export type InvestigationAction =
+  | BeginInvestigationAction
+  | OpenEvidenceAction
+  | BookmarkEvidenceAction
+  | SelectHypothesisAction
 
 export type InvestigationCommand =
   | { type: 'begin_investigation' }
   | { type: 'open_evidence'; evidenceId: string }
+  | { type: 'bookmark_evidence'; evidenceId: string }
+  | { type: 'unbookmark_evidence'; evidenceId: string }
+  | { type: 'select_hypothesis'; hypothesisId: string }
 
 export interface InvestigationState {
   scenarioId: string

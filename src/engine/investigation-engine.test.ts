@@ -278,3 +278,210 @@ describe('investigation budget', () => {
     expect(afterScope).toEqual(before)
   })
 })
+
+describe('evidence bookmarks', () => {
+  it('bookmarks only opened evidence and records the action', () => {
+    const { instance, state } = startedInvestigation()
+
+    expect(() =>
+      applyInvestigationCommand(instance, state, {
+        type: 'bookmark_evidence',
+        evidenceId: 'scope',
+      }),
+    ).toThrow(expect.objectContaining({ code: 'EVIDENCE_NOT_OPENED' }))
+
+    const opened = applyInvestigationCommand(instance, state, {
+      type: 'open_evidence',
+      evidenceId: 'scope',
+    })
+    const bookmarked = applyInvestigationCommand(instance, opened, {
+      type: 'bookmark_evidence',
+      evidenceId: 'scope',
+    })
+
+    expect(bookmarked.bookmarkedEvidenceIds).toEqual(['scope'])
+    expect(bookmarked.actions.at(-1)).toEqual({
+      sequence: 3,
+      type: 'bookmark_evidence',
+      evidenceId: 'scope',
+    })
+    expect(opened.bookmarkedEvidenceIds).toEqual([])
+  })
+
+  it('rejects unknown evidence before applying bookmark semantics', () => {
+    const { instance, state } = startedInvestigation()
+
+    expect(() =>
+      applyInvestigationCommand(instance, state, {
+        type: 'bookmark_evidence',
+        evidenceId: 'missing',
+      }),
+    ).toThrow(expect.objectContaining({ code: 'UNKNOWN_EVIDENCE' }))
+    expect(() =>
+      applyInvestigationCommand(instance, state, {
+        type: 'unbookmark_evidence',
+        evidenceId: 'missing',
+      }),
+    ).toThrow(expect.objectContaining({ code: 'UNKNOWN_EVIDENCE' }))
+  })
+
+  it('treats duplicate bookmark changes as same-reference no-ops', () => {
+    const { instance, state } = startedInvestigation()
+
+    expect(
+      applyInvestigationCommand(instance, state, {
+        type: 'unbookmark_evidence',
+        evidenceId: 'scope',
+      }),
+    ).toBe(state)
+
+    const opened = applyInvestigationCommand(instance, state, {
+      type: 'open_evidence',
+      evidenceId: 'scope',
+    })
+    const bookmarked = applyInvestigationCommand(instance, opened, {
+      type: 'bookmark_evidence',
+      evidenceId: 'scope',
+    })
+
+    expect(
+      applyInvestigationCommand(instance, bookmarked, {
+        type: 'bookmark_evidence',
+        evidenceId: 'scope',
+      }),
+    ).toBe(bookmarked)
+    expect(
+      applyInvestigationCommand(instance, opened, {
+        type: 'unbookmark_evidence',
+        evidenceId: 'scope',
+      }),
+    ).toBe(opened)
+  })
+
+  it('unbookmarks evidence and appends rebookmarked evidence at the end', () => {
+    const { instance, state } = startedInvestigation()
+    const scopeOpened = applyInvestigationCommand(instance, state, {
+      type: 'open_evidence',
+      evidenceId: 'scope',
+    })
+    const configurationOpened = applyInvestigationCommand(
+      instance,
+      scopeOpened,
+      { type: 'open_evidence', evidenceId: 'configuration' },
+    )
+    const scopeBookmarked = applyInvestigationCommand(
+      instance,
+      configurationOpened,
+      { type: 'bookmark_evidence', evidenceId: 'scope' },
+    )
+    const bothBookmarked = applyInvestigationCommand(
+      instance,
+      scopeBookmarked,
+      { type: 'bookmark_evidence', evidenceId: 'configuration' },
+    )
+    const scopeUnbookmarked = applyInvestigationCommand(
+      instance,
+      bothBookmarked,
+      { type: 'unbookmark_evidence', evidenceId: 'scope' },
+    )
+    const scopeRebookmarked = applyInvestigationCommand(
+      instance,
+      scopeUnbookmarked,
+      { type: 'bookmark_evidence', evidenceId: 'scope' },
+    )
+
+    expect(scopeUnbookmarked.bookmarkedEvidenceIds).toEqual(['configuration'])
+    expect(scopeUnbookmarked.actions.at(-1)).toEqual({
+      sequence: 6,
+      type: 'unbookmark_evidence',
+      evidenceId: 'scope',
+    })
+    expect(scopeRebookmarked.bookmarkedEvidenceIds).toEqual([
+      'configuration',
+      'scope',
+    ])
+    expect(scopeRebookmarked.actions.at(-1)).toEqual({
+      sequence: 7,
+      type: 'bookmark_evidence',
+      evidenceId: 'scope',
+    })
+    expect(bothBookmarked.bookmarkedEvidenceIds).toEqual([
+      'scope',
+      'configuration',
+    ])
+  })
+})
+
+describe('hypothesis selection', () => {
+  it('records selection changes with their action sequence', () => {
+    const { instance, state } = startedInvestigation()
+    const first = applyInvestigationCommand(instance, state, {
+      type: 'select_hypothesis',
+      hypothesisId: 'reporting-service-outage',
+    })
+    const second = applyInvestigationCommand(instance, first, {
+      type: 'select_hypothesis',
+      hypothesisId: 'reporting-role-removed',
+    })
+
+    expect(second.selectedHypothesisId).toBe('reporting-role-removed')
+    expect(second.hypothesisHistory).toEqual([
+      { hypothesisId: 'reporting-service-outage', atAction: 2 },
+      { hypothesisId: 'reporting-role-removed', atAction: 3 },
+    ])
+    expect(second.actions.slice(-2)).toEqual([
+      {
+        sequence: 2,
+        type: 'select_hypothesis',
+        hypothesisId: 'reporting-service-outage',
+      },
+      {
+        sequence: 3,
+        type: 'select_hypothesis',
+        hypothesisId: 'reporting-role-removed',
+      },
+    ])
+    expect(state.selectedHypothesisId).toBeUndefined()
+    expect(state.hypothesisHistory).toEqual([])
+  })
+
+  it('rejects unknown hypotheses and ignores the current selection', () => {
+    const { instance, state } = startedInvestigation()
+
+    expect(() =>
+      applyInvestigationCommand(instance, state, {
+        type: 'select_hypothesis',
+        hypothesisId: 'missing',
+      }),
+    ).toThrow(expect.objectContaining({ code: 'UNKNOWN_HYPOTHESIS' }))
+
+    const selected = applyInvestigationCommand(instance, state, {
+      type: 'select_hypothesis',
+      hypothesisId: 'reporting-role-removed',
+    })
+    expect(
+      applyInvestigationCommand(instance, selected, {
+        type: 'select_hypothesis',
+        hypothesisId: 'reporting-role-removed',
+      }),
+    ).toBe(selected)
+  })
+})
+
+describe('notebook command status', () => {
+  it.each([
+    { type: 'bookmark_evidence', evidenceId: 'scope' } as const,
+    { type: 'unbookmark_evidence', evidenceId: 'scope' } as const,
+    {
+      type: 'select_hypothesis',
+      hypothesisId: 'reporting-role-removed',
+    } as const,
+  ])('requires investigating status for $type', (command) => {
+    const instance = instanceFixture(evidenceChainSource())
+    const intro = createInvestigation(instance, 1_000)
+
+    expect(() => applyInvestigationCommand(instance, intro, command)).toThrow(
+      expect.objectContaining({ code: 'INVALID_STATUS' }),
+    )
+  })
+})

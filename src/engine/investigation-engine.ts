@@ -138,6 +138,69 @@ function openEvidence(
   }
 }
 
+function updateBookmark(
+  instance: ScenarioInstance,
+  state: InvestigationState,
+  evidenceId: string,
+  bookmark: boolean,
+): InvestigationState {
+  requireInvestigating(state)
+  findEvidence(instance, evidenceId)
+  const isBookmarked = state.bookmarkedEvidenceIds.includes(evidenceId)
+  if (bookmark === isBookmarked) return state
+  if (bookmark && !state.openedEvidenceIds.includes(evidenceId)) {
+    fail(
+      'EVIDENCE_NOT_OPENED',
+      `Evidence "${evidenceId}" must be opened before bookmarking.`,
+    )
+  }
+
+  const type = bookmark ? 'bookmark_evidence' : 'unbookmark_evidence'
+  return {
+    ...state,
+    bookmarkedEvidenceIds: bookmark
+      ? [...state.bookmarkedEvidenceIds, evidenceId]
+      : state.bookmarkedEvidenceIds.filter((id) => id !== evidenceId),
+    actions: [
+      ...state.actions,
+      {
+        sequence: state.actions.length + 1,
+        type,
+        evidenceId,
+      },
+    ],
+  }
+}
+
+function selectHypothesis(
+  instance: ScenarioInstance,
+  state: InvestigationState,
+  hypothesisId: string,
+): InvestigationState {
+  requireInvestigating(state)
+  if (!instance.scenario.hypotheses.some(({ id }) => id === hypothesisId)) {
+    fail(
+      'UNKNOWN_HYPOTHESIS',
+      `Scenario "${instance.scenario.id}" has no hypothesis "${hypothesisId}".`,
+    )
+  }
+  if (state.selectedHypothesisId === hypothesisId) return state
+
+  const sequence = state.actions.length + 1
+  return {
+    ...state,
+    selectedHypothesisId: hypothesisId,
+    hypothesisHistory: [
+      ...state.hypothesisHistory,
+      { hypothesisId, atAction: sequence },
+    ],
+    actions: [
+      ...state.actions,
+      { sequence, type: 'select_hypothesis', hypothesisId },
+    ],
+  }
+}
+
 export function applyInvestigationCommand(
   instance: ScenarioInstance,
   state: InvestigationState,
@@ -165,6 +228,18 @@ export function applyInvestigationCommand(
 
   if (command.type === 'open_evidence') {
     return openEvidence(instance, state, command.evidenceId)
+  }
+
+  if (command.type === 'bookmark_evidence') {
+    return updateBookmark(instance, state, command.evidenceId, true)
+  }
+
+  if (command.type === 'unbookmark_evidence') {
+    return updateBookmark(instance, state, command.evidenceId, false)
+  }
+
+  if (command.type === 'select_hypothesis') {
+    return selectHypothesis(instance, state, command.hypothesisId)
   }
 
   const exhaustive: never = command
