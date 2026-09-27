@@ -1,6 +1,6 @@
 # Milestone 4: Investigation Engine Design
 
-**Date:** 2026-09-25  
+**Date:** 2026-09-25
 **Status:** Approved
 
 ## Objective

@@ -6,6 +6,10 @@ import path from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 import { composeScenario } from '../engine/compose-scenario'
+import {
+  applyInvestigationCommand,
+  createInvestigation,
+} from '../engine/investigation-engine'
 import { normalizeScenarioIndex } from './normalize-scenario'
 import { parseScenario } from './parse-scenario'
 import {
@@ -59,6 +63,31 @@ describe('authored scenario content', () => {
           scenario.red_herrings.choose,
         )
       }
+    }
+
+    for (const { scenario } of documents) {
+      const instance = composeScenario(scenario, 'investigation-path')
+      let investigation = applyInvestigationCommand(
+        instance,
+        createInvestigation(instance, 1_000),
+        { type: 'begin_investigation' },
+      )
+
+      for (const entry of scenario.debrief.efficient_path) {
+        if (entry.kind !== 'evidence') continue
+        investigation = applyInvestigationCommand(instance, investigation, {
+          type: 'open_evidence',
+          evidenceId: entry.ref,
+        })
+      }
+
+      expect(investigation.openedEvidenceIds).toEqual(
+        scenario.debrief.efficient_path.flatMap((entry) =>
+          entry.kind === 'evidence' ? [entry.ref] : [],
+        ),
+      )
+      expect(scenario.investigation_budget).toBeUndefined()
+      expect(investigation.budgetRemaining).toBeUndefined()
     }
   })
 })

@@ -11,6 +11,9 @@ Every scenario has these top-level sections:
 
 - `id`, `version`, `title`, `domain`, `difficulty`, and `estimated_minutes`:
   browse metadata. `version` and `estimated_minutes` are positive integers.
+- `investigation_budget` (optional): a positive integer starting balance.
+  Omit it for scenarios, especially beginner scenarios, that should not create
+  budget pressure.
 - `learning`: non-empty `concepts` and `objectives` lists.
 - `variations`: non-empty fictional `customer_names` and bounded
   `timestamp_offsets_minutes` pools used by deterministic composition.
@@ -68,6 +71,16 @@ appear in `customer_context`; other template tokens are rejected. Customer,
 symptom, timestamp, and red-herring choices are independently derived from the
 scenario ID, version, and seed. Do not encode root-cause or evidence changes as
 variations.
+
+## Investigation flow
+
+Evidence with an empty `unlock_after` list is initially available. Other
+evidence unlocks only after every referenced dependency has been opened. The
+first opening records its authored cost; an enabled budget deducts that cost
+once. Reopening evidence is free. Bookmarks require opened evidence, and
+hypothesis choices must reference an authored hypothesis ID.
+
+Evidence `relevance` and `explanation` remain hidden during investigation.
 
 ## Relationships and safeguards
 

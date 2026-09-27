@@ -20,23 +20,24 @@ There is no runtime backend, authentication system, database, remote AI dependen
 
 ## Product boundaries
 
-Milestone 3 implements deterministic scenario composition while preserving the
-static architecture:
+Milestone 4 implements deterministic investigation transitions while
+preserving the static architecture:
 
 ```text
 content/scenarios/*.yaml
     ↓ YAML parse + Zod source schema + semantic validation
 validated ScenarioSource + seed
-    ↓ pure deterministic composer
+    ↓ deterministic composer
 source-isolated ScenarioInstance
-    ↓ future investigation engine and React presentation
+    ↓ pure investigation command reducer + safe selectors
+InvestigationState + active-investigation evidence views
+    ↓ future React investigation workspace
 static HTML, CSS, and JavaScript in dist/
 ```
 
-The content pipeline and deterministic composer are implemented. Future
-milestones will add investigation state and scoring, then React presentation
-and versioned browser-local progress storage. Runtime evidence unlocking and
-debrief behavior also remain future engine work.
+The content pipeline, deterministic composer, and investigation engine are
+implemented. Future milestones will add scoring, React presentation, and
+versioned browser-local progress storage.
 
 The boundaries have clear responsibilities:
 
@@ -46,9 +47,9 @@ The boundaries have clear responsibilities:
 - **Presentation:** Accessible React views that render engine state without embedding answer keys or scoring rules.
 - **Storage:** A versioned adapter for local progress with corruption recovery and migrations.
 
-The routing, presentation, content, validation, and composition boundaries now
-exist. Investigation, scoring, and storage remain planned boundaries rather
-than empty speculative interfaces.
+The routing, presentation, content, validation, composition, and investigation
+boundaries now exist. Scoring and storage remain planned boundaries rather than
+empty speculative interfaces.
 
 ## Architecture decisions
 
@@ -83,10 +84,10 @@ disabled and explanatory.
 
 ### Framework-independent domain behavior
 
-Scenario composition is plain TypeScript. Future state transitions and scoring
-will remain framework-independent wherever practical. React will consume public
-engine results rather than own hidden business rules. This permits deterministic
-unit tests without rendering UI.
+Scenario composition and investigation transitions are plain TypeScript. Future
+scoring will remain framework-independent wherever practical. React will consume
+public engine results rather than own hidden business rules. This permits
+deterministic unit tests without rendering UI.
 
 ### Deterministic scenario composition
 
@@ -95,6 +96,13 @@ fixed named seed streams. The composer is pure TypeScript and does not depend
 on React, browser APIs, the current clock, or runtime randomness. Independent
 dimension streams mean adding a future permitted dimension does not reshuffle
 existing dimensions for the same scenario version and seed.
+
+### Pure investigation transitions
+
+Milestone 4 stores durable investigation facts and derives availability from
+authored dependencies. Commands are atomic and framework-independent. Time is
+an explicit initialization input, budgets are optional, and active selectors
+omit hidden relevance, explanations, root-cause, and debrief data.
 
 ### Build-time content validation
 
@@ -129,9 +137,11 @@ The shell uses semantic landmarks, a skip link, active-route semantics, a native
 - **Playwright:** keyboard, routing, mobile-navigation, clean-route, and responsive-width verification against a fresh production preview
 - **GitHub Actions:** repeatable clean-install quality gates
 
-Engine suites cover deterministic seed selection, scenario composition, and
-source isolation. Scenario contract suites cover both valid content and
-representative failure modes.
+Engine suites cover deterministic seed selection, scenario composition, source
+isolation, investigation transitions, budget behavior, and safe evidence
+projections. Scenario contract suites cover both valid content and
+representative failure modes, including traversal of real authored efficient
+paths.
 
 ## Deployment
 
@@ -139,9 +149,11 @@ The deployment workflow builds on GitHub-hosted runners and publishes only `dist
 
 ## Current milestone boundary
 
-Milestone 3 includes the fixed seed utility; deterministic customer, symptom,
-and timestamp composition; red-herring selection; source isolation; and
-deterministic unit and authored-content tests. The browser is still inactive
-and does not consume the public index or composed instances. Investigation
-state, evidence unlocking, scoring, persistence, seeded routes, daily
-challenges, and UI integration remain later work.
+Milestone 4 includes deterministic investigation initialization and commands;
+all-dependency evidence unlocking; optional budget accounting; idempotent
+evidence reopening; bookmarks; hypothesis history; action history; and UI-safe
+active-investigation evidence selectors. The browser is still inactive and
+does not consume the public index, composed instances, or investigation state.
+Investigation UI, diagnosis submission, scoring, remediation, communication,
+debrief, persistence, sharing, seeded routes, daily challenges, and UI
+integration remain later work.
