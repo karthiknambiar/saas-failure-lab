@@ -2,14 +2,11 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import { ActionLink } from '../../components/ActionLink'
-import {
-  applyInvestigationCommand,
-  createInvestigation,
-  InvestigationTransitionError,
-} from '../../engine/investigation-engine'
 import type { ScenarioInstance } from '../../engine/scenario-instance'
 import { IncidentIntro } from './IncidentIntro'
+import { InvestigationWorkspace } from './InvestigationWorkspace'
 import { loadInvestigationScenario } from './load-investigation'
+import { useInvestigationController } from './useInvestigationController'
 
 function ScenarioRecovery({ unavailable }: { unavailable: boolean }) {
   return (
@@ -44,46 +41,12 @@ export function InvestigationPage() {
 }
 
 function PlayableInvestigation({ instance }: { instance: ScenarioInstance }) {
-  const [investigation, setInvestigation] = useState(() =>
-    createInvestigation(instance, Date.now()),
-  )
-  const [announcement, setAnnouncement] = useState('')
+  const [startedAt] = useState(Date.now)
+  const controller = useInvestigationController(instance, startedAt)
 
-  function beginInvestigation() {
-    try {
-      const nextState = applyInvestigationCommand(instance, investigation, {
-        type: 'begin_investigation',
-      })
-      setInvestigation(nextState)
-      setAnnouncement('')
-    } catch (error) {
-      if (error instanceof InvestigationTransitionError) {
-        setAnnouncement('Unable to begin the investigation. Try again.')
-        return
-      }
-      throw error
-    }
-  }
-
-  if (investigation.status === 'investigating') {
-    return (
-      <section
-        className="investigation-workspace page container"
-        aria-labelledby="workspace-title"
-      >
-        <p className="eyebrow">Active incident</p>
-        <h1 id="workspace-title">Investigation workspace</h1>
-        <p>{instance.scenario.title}</p>
-      </section>
-    )
-  }
-
-  return (
-    <>
-      <p className="visually-hidden" role="alert" aria-live="assertive">
-        {announcement}
-      </p>
-      <IncidentIntro instance={instance} onBegin={beginInvestigation} />
-    </>
+  return controller.state.status === 'intro' ? (
+    <IncidentIntro instance={instance} onBegin={controller.begin} />
+  ) : (
+    <InvestigationWorkspace instance={instance} controller={controller} />
   )
 }

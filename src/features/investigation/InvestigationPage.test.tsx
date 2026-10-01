@@ -55,7 +55,7 @@ describe('InvestigationPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Begin investigation' }))
 
     expect(
-      screen.getByRole('heading', { name: 'Investigation workspace' }),
+      screen.getByRole('heading', { name: 'Login works, feature does not' }),
     ).toBeInTheDocument()
   })
 
