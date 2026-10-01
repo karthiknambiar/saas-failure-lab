@@ -1,0 +1,115 @@
+import { fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
+import { describe, expect, it } from 'vitest'
+
+import { loadInvestigationScenario } from './load-investigation'
+import { InvestigationPage } from './InvestigationPage'
+import { IncidentIntro } from './IncidentIntro'
+import { evidenceLabel, sentenceCase } from './investigation-labels'
+
+function renderInvestigation(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Routes>
+        <Route path="/scenarios/:scenarioId" element={<InvestigationPage />} />
+        <Route path="/scenarios" element={<h1>Browse scenarios</h1>} />
+      </Routes>
+    </MemoryRouter>,
+  )
+}
+
+function RouteSwitcher() {
+  const navigate = useNavigate()
+
+  return (
+    <>
+      <button type="button" onClick={() => navigate('/scenarios/iam-001')}>
+        Open IAM
+      </button>
+      <Routes>
+        <Route path="/scenarios/:scenarioId" element={<InvestigationPage />} />
+      </Routes>
+    </>
+  )
+}
+
+describe('InvestigationPage', () => {
+  it('introduces IAM-001 with only safe incident information and begins work', () => {
+    renderInvestigation('/scenarios/iam-001')
+
+    expect(
+      screen.getByRole('heading', { name: 'Login works, feature does not' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Two finance users cannot complete month-end reporting while their reporting access is unavailable.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Service status')).toBeInTheDocument()
+    expect(document.body).not.toHaveTextContent('bulk cleanup removed')
+    expect(document.body).not.toHaveTextContent(/relevance|debrief|root cause/i)
+    expect(document.body).not.toHaveTextContent(
+      /critical|supporting|red herring/i,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Begin investigation' }))
+
+    expect(
+      screen.getByRole('heading', { name: 'Investigation workspace' }),
+    ).toBeInTheDocument()
+  })
+
+  it.each([
+    ['/scenarios/fnd-001', 'This scenario is not playable yet.'],
+    ['/scenarios/missing-001', 'This scenario could not be found.'],
+  ])('recovers unavailable routes at %s', (path, message) => {
+    renderInvestigation(path)
+
+    expect(screen.getByText(message)).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Browse scenarios' }),
+    ).toHaveAttribute('href', '/scenarios')
+  })
+
+  it('can navigate from an unavailable scenario to IAM-001', () => {
+    render(
+      <MemoryRouter initialEntries={['/scenarios/fnd-001']}>
+        <RouteSwitcher />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open IAM' }))
+
+    expect(
+      screen.getByRole('heading', { name: 'Login works, feature does not' }),
+    ).toBeInTheDocument()
+  })
+})
+
+describe('IncidentIntro', () => {
+  it('shows a supplied starting budget', () => {
+    const scenario = loadInvestigationScenario('iam-001')
+    if (!scenario.available) throw new Error('Expected IAM-001 to be available')
+    const instance = structuredClone(scenario.instance)
+    instance.scenario.investigation_budget = 7
+
+    render(<IncidentIntro instance={instance} onBegin={() => undefined} />)
+
+    expect(screen.getByText('Starting budget: 7')).toBeInTheDocument()
+  })
+})
+
+describe('investigation labels', () => {
+  it('renders known evidence labels and sentence-cases an unmapped tool', () => {
+    expect(sentenceCase('role-configuration')).toBe('Role configuration')
+    expect(sentenceCase('authentication_events')).toBe('Authentication events')
+    expect(evidenceLabel('affected-user-scope')).toBe('Affected user scope')
+    expect(evidenceLabel('authentication-events')).toBe('Authentication events')
+    expect(evidenceLabel('role-audit-history')).toBe('Role audit history')
+    expect(evidenceLabel('role-configuration')).toBe('Role configuration')
+    expect(evidenceLabel('service-status')).toBe('Service status')
+    expect(evidenceLabel('unmapped-id', 'identity_events')).toBe(
+      'Identity events',
+    )
+  })
+})

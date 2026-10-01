@@ -16,6 +16,7 @@ describe('application routes', () => {
   it.each([
     ['/', 'Practice the investigation before it is urgent.'],
     ['/scenarios', 'Browse troubleshooting scenarios'],
+    ['/scenarios/iam-001', 'Login works, feature does not'],
     ['/how-it-works', 'How an investigation works'],
   ])('renders %s', (path, heading) => {
     renderRoute(path)
@@ -45,14 +46,17 @@ describe('application routes', () => {
     )
   })
 
-  it('renders labeled inactive scenario filters', () => {
+  it('lists the IAM scenario without inactive filter controls', () => {
     renderRoute('/scenarios')
 
     expect(
-      screen.getByRole('searchbox', { name: 'Search scenarios' }),
-    ).toBeDisabled()
-    expect(screen.getByLabelText('Domain')).toBeDisabled()
-    expect(screen.getByLabelText('Difficulty')).toBeDisabled()
-    expect(screen.getByText(/filters become available/i)).toBeInTheDocument()
+      screen.getByRole('link', { name: 'Open Login works, feature does not' }),
+    ).toHaveAttribute('href', '/scenarios/iam-001')
+    expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
+    expect(screen.getByText('Identity')).toBeInTheDocument()
+    expect(screen.getByText('Beginner')).toBeInTheDocument()
+    expect(
+      screen.getByText('Authentication vs authorization'),
+    ).toBeInTheDocument()
   })
 })
