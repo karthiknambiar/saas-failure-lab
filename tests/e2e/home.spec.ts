@@ -93,3 +93,38 @@ for (const viewport of [
     ).toBe(true)
   })
 }
+
+for (const viewport of [
+  { width: 320, height: 700, mobile: true },
+  { width: 820, height: 900, mobile: true },
+  { width: 865, height: 900, mobile: false },
+  { width: 821, height: 900, mobile: false },
+]) {
+  test(`fits the investigation workspace at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize(viewport)
+    await page.goto('/failure-lab/scenarios/iam-001')
+    await page.getByRole('button', { name: 'Begin investigation' }).click()
+
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true)
+
+    if (viewport.mobile) {
+      await expect(page.getByRole('tablist')).toBeVisible()
+      await expect(page.getByRole('tabpanel', { name: 'Tools' })).toBeVisible()
+    } else {
+      await expect(page.getByRole('tablist')).toHaveCount(0)
+      await expect(
+        page.getByRole('region', { name: 'Investigation tools' }),
+      ).toBeVisible()
+      await expect(page.getByRole('region', { name: 'Evidence' })).toBeVisible()
+      await expect(
+        page.getByRole('region', { name: 'Case notebook' }),
+      ).toBeVisible()
+    }
+  })
+}

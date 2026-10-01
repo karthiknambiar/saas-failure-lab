@@ -5,6 +5,9 @@ import { CaseNotebook } from './CaseNotebook'
 import { EvidenceToolList } from './EvidenceToolList'
 import { EvidenceViewer } from './EvidenceViewer'
 import type { useInvestigationController } from './useInvestigationController'
+import type { WorkspaceTab } from './useInvestigationController'
+import { useMediaQuery } from './useMediaQuery'
+import { WorkspaceTabs } from './WorkspaceTabs'
 
 type Controller = ReturnType<typeof useInvestigationController>
 
@@ -18,6 +21,7 @@ export function InvestigationWorkspace({
   readyButtonRef: RefObject<HTMLButtonElement | null>
 }) {
   const evidenceHeading = useRef<HTMLHeadingElement>(null)
+  const isMobile = useMediaQuery('(max-width: 820px)')
   const selectedEvidence = controller.evidenceViews.find(
     ({ id }) => id === controller.selectedEvidenceId,
   )
@@ -25,6 +29,16 @@ export function InvestigationWorkspace({
   useEffect(() => {
     if (controller.selectedEvidenceId) evidenceHeading.current?.focus()
   }, [controller.selectedEvidenceId])
+
+  function tabPanelProps(tab: WorkspaceTab) {
+    return isMobile
+      ? {
+          role: 'tabpanel' as const,
+          'aria-labelledby': `workspace-tab-${tab}`,
+          hidden: controller.activeTab !== tab,
+        }
+      : {}
+  }
 
   return (
     <article className="investigation" aria-labelledby="investigation-title">
@@ -59,8 +73,20 @@ export function InvestigationWorkspace({
         {controller.error}
       </p>
 
+      {isMobile ? (
+        <WorkspaceTabs
+          active={controller.activeTab}
+          onChange={controller.setActiveTab}
+        />
+      ) : null}
+
       <div className="workspace-grid">
-        <section className="workspace-panel" aria-labelledby="tools-title">
+        <section
+          id="workspace-panel-tools"
+          className="workspace-panel"
+          aria-labelledby={isMobile ? undefined : 'tools-title'}
+          {...tabPanelProps('tools')}
+        >
           <h2 id="tools-title">Investigation tools</h2>
           <EvidenceToolList
             evidence={controller.evidenceViews}
@@ -70,8 +96,10 @@ export function InvestigationWorkspace({
           />
         </section>
         <section
+          id="workspace-panel-evidence"
           className="workspace-panel workspace-panel--evidence"
-          aria-label="Evidence"
+          aria-label={isMobile ? undefined : 'Evidence'}
+          {...tabPanelProps('evidence')}
         >
           <EvidenceViewer
             ref={evidenceHeading}
@@ -86,7 +114,12 @@ export function InvestigationWorkspace({
             onToggleBookmark={controller.toggleBookmark}
           />
         </section>
-        <section className="workspace-panel" aria-labelledby="notebook-title">
+        <section
+          id="workspace-panel-notebook"
+          className="workspace-panel"
+          aria-labelledby={isMobile ? undefined : 'notebook-title'}
+          {...tabPanelProps('notebook')}
+        >
           <h2 id="notebook-title">Case notebook</h2>
           <CaseNotebook
             instance={instance}

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
 import { InvestigationPage } from './InvestigationPage'
@@ -17,6 +17,8 @@ function renderWorkspace() {
 }
 
 describe('InvestigationWorkspace', () => {
+  afterEach(() => vi.restoreAllMocks())
+
   it('renders the three labelled desktop regions with a safe empty viewer', () => {
     renderWorkspace()
 
@@ -140,5 +142,36 @@ describe('InvestigationWorkspace', () => {
     )
     expect(serialized).not.toContain('bulk cleanup removed')
     expect(serialized).not.toContain('Two affected finance users')
+  })
+
+  it('uses accessible tabs on mobile and follows evidence selection', () => {
+    vi.spyOn(window, 'matchMedia').mockReturnValue({
+      matches: true,
+      media: '(max-width: 820px)',
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })
+    renderWorkspace()
+
+    expect(screen.getByRole('tablist')).toHaveAccessibleName(
+      'Investigation workspace',
+    )
+    expect(screen.getByRole('tabpanel', { name: 'Tools' })).toBeVisible()
+    expect(
+      document.getElementById('workspace-panel-evidence'),
+    ).not.toBeVisible()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /open service status.*cost 1/i }),
+    )
+    expect(screen.getByRole('tab', { name: 'Evidence' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
+    expect(screen.getByRole('tabpanel', { name: 'Evidence' })).toBeVisible()
   })
 })
