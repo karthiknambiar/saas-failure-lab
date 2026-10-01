@@ -33,11 +33,10 @@ describe('InvestigationWorkspace', () => {
     expect(
       screen.queryByRole('button', { name: /bookmark/i }),
     ).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Observations' })).toBeVisible()
     expect(
-      screen.getByText(
-        'Bookmark observations and select a hypothesis as you investigate.',
-      ),
-    ).toBeVisible()
+      screen.getByRole('button', { name: 'Ready to diagnose' }),
+    ).toBeDisabled()
 
     fireEvent.click(
       screen.getByRole('radio', {
@@ -49,6 +48,9 @@ describe('InvestigationWorkspace', () => {
         name: /recent role change removed the affected users/i,
       }),
     ).toBeChecked()
+    expect(
+      screen.getByRole('button', { name: 'Ready to diagnose' }),
+    ).toBeEnabled()
   })
 
   it('opens available evidence, unlocks dependencies, and marks the selected tool', () => {

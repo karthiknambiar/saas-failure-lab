@@ -1,6 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 
 import type { ScenarioInstance } from '../../engine/scenario-instance'
+import { CaseNotebook } from './CaseNotebook'
 import { EvidenceToolList } from './EvidenceToolList'
 import { EvidenceViewer } from './EvidenceViewer'
 import type { useInvestigationController } from './useInvestigationController'
@@ -10,9 +11,11 @@ type Controller = ReturnType<typeof useInvestigationController>
 export function InvestigationWorkspace({
   instance,
   controller,
+  readyButtonRef,
 }: {
   instance: ScenarioInstance
   controller: Controller
+  readyButtonRef: RefObject<HTMLButtonElement | null>
 }) {
   const evidenceHeading = useRef<HTMLHeadingElement>(null)
   const selectedEvidence = controller.evidenceViews.find(
@@ -85,26 +88,23 @@ export function InvestigationWorkspace({
         </section>
         <section className="workspace-panel" aria-labelledby="notebook-title">
           <h2 id="notebook-title">Case notebook</h2>
-          <p>
-            Bookmark observations and select a hypothesis as you investigate.
-          </p>
-          <fieldset className="notebook-hypothesis">
-            <legend>Current hypothesis</legend>
-            {instance.scenario.hypotheses.map((hypothesis) => (
-              <label key={hypothesis.id}>
-                <input
-                  type="radio"
-                  name="current-hypothesis"
-                  value={hypothesis.id}
-                  checked={
-                    controller.state.selectedHypothesisId === hypothesis.id
-                  }
-                  onChange={() => controller.selectHypothesis(hypothesis.id)}
-                />
-                <span>{hypothesis.label}</span>
-              </label>
-            ))}
-          </fieldset>
+          <CaseNotebook
+            instance={instance}
+            bookmarkedEvidenceIds={controller.state.bookmarkedEvidenceIds}
+            selectedHypothesisId={controller.state.selectedHypothesisId}
+            actions={controller.state.actions}
+            onSelectEvidence={controller.selectEvidence}
+            onSelectHypothesis={controller.selectHypothesis}
+          />
+          <button
+            ref={readyButtonRef}
+            type="button"
+            className="button button--primary"
+            disabled={!controller.state.selectedHypothesisId}
+            onClick={() => controller.setReady(true)}
+          >
+            Ready to diagnose
+          </button>
         </section>
       </div>
     </article>

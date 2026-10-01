@@ -84,6 +84,33 @@ describe('InvestigationPage', () => {
       screen.getByRole('heading', { name: 'Login works, feature does not' }),
     ).toBeInTheDocument()
   })
+
+  it('opens a reversible ready checkpoint without changing routes or submitting', () => {
+    renderInvestigation('/scenarios/iam-001')
+    fireEvent.click(screen.getByRole('button', { name: 'Begin investigation' }))
+    fireEvent.click(
+      screen.getByRole('radio', {
+        name: /recent role change removed the affected users/i,
+      }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Ready to diagnose' }))
+
+    expect(
+      screen.getByRole('heading', { name: 'Ready to diagnose' }),
+    ).toHaveFocus()
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /submit|score/i }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Return to investigation' }),
+    )
+    expect(
+      screen.getByRole('button', { name: 'Ready to diagnose' }),
+    ).toHaveFocus()
+    expect(screen.getByRole('heading', { name: 'Case notebook' })).toBeVisible()
+  })
 })
 
 describe('IncidentIntro', () => {

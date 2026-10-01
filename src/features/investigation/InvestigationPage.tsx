@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import { ActionLink } from '../../components/ActionLink'
@@ -6,6 +6,7 @@ import type { ScenarioInstance } from '../../engine/scenario-instance'
 import { IncidentIntro } from './IncidentIntro'
 import { InvestigationWorkspace } from './InvestigationWorkspace'
 import { loadInvestigationScenario } from './load-investigation'
+import { ReadyToDiagnose } from './ReadyToDiagnose'
 import { useInvestigationController } from './useInvestigationController'
 
 function ScenarioRecovery({ unavailable }: { unavailable: boolean }) {
@@ -42,11 +43,42 @@ export function InvestigationPage() {
 
 function PlayableInvestigation({ instance }: { instance: ScenarioInstance }) {
   const [startedAt] = useState(Date.now)
+  const readyButtonRef = useRef<HTMLButtonElement>(null)
+  const restoreReadyFocus = useRef(false)
   const controller = useInvestigationController(instance, startedAt)
 
-  return controller.state.status === 'intro' ? (
-    <IncidentIntro instance={instance} onBegin={controller.begin} />
-  ) : (
-    <InvestigationWorkspace instance={instance} controller={controller} />
+  useEffect(() => {
+    if (!controller.ready && restoreReadyFocus.current) {
+      readyButtonRef.current?.focus()
+      restoreReadyFocus.current = false
+    }
+  }, [controller.ready])
+
+  if (controller.state.status === 'intro') {
+    return <IncidentIntro instance={instance} onBegin={controller.begin} />
+  }
+
+  if (controller.ready && controller.state.selectedHypothesisId) {
+    return (
+      <ReadyToDiagnose
+        instance={instance}
+        selectedHypothesisId={controller.state.selectedHypothesisId}
+        bookmarkedEvidenceIds={controller.state.bookmarkedEvidenceIds}
+        openedCount={controller.state.openedEvidenceIds.length}
+        totalEvidence={controller.evidenceViews.length}
+        onReturn={() => {
+          restoreReadyFocus.current = true
+          controller.setReady(false)
+        }}
+      />
+    )
+  }
+
+  return (
+    <InvestigationWorkspace
+      instance={instance}
+      controller={controller}
+      readyButtonRef={readyButtonRef}
+    />
   )
 }
