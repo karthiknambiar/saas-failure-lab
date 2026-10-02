@@ -20,23 +20,23 @@ There is no runtime backend, authentication system, database, remote AI dependen
 
 ## Product boundaries
 
-Milestone 4 implements deterministic investigation transitions while
-preserving the static architecture:
+Milestone 5 implements the IAM-001 investigation UI while preserving the
+static architecture:
 
 ```text
-content/scenarios/*.yaml
-    ↓ YAML parse + Zod source schema + semantic validation
-validated ScenarioSource + seed
-    ↓ deterministic composer
-source-isolated ScenarioInstance
-    ↓ pure investigation command reducer + safe selectors
-InvestigationState + active-investigation evidence views
-    ↓ future React investigation workspace
+validated scenario YAML
+    ↓ deterministic build-time generator
+browse-safe index + typed playable catalog
+    ↓ canonical composer + pure investigation engine
+React investigation controller
+    ↓ safe evidence selectors
+accessible desktop/mobile investigation UI
+    ↓
 static HTML, CSS, and JavaScript in dist/
 ```
 
-The content pipeline, deterministic composer, and investigation engine are
-implemented. Future milestones will add scoring, React presentation, and
+The content pipeline, deterministic composer, investigation engine, and
+accessible IAM-001 UI are implemented. Future milestones will add scoring and
 versioned browser-local progress storage.
 
 The boundaries have clear responsibilities:
@@ -74,13 +74,28 @@ YAML parser support the build-time content pipeline; scenario YAML is not parsed
 in the browser. State management and persistence libraries will be added only
 when their milestone requires them.
 
+### Generated playable catalog
+
+Milestone 5 generates a typed scenario catalog after the same collection-wide
+validation used by the public index. The browser does not parse YAML or fetch
+scenario data at runtime. The scenario browser reads only the safe index; the
+investigation feature uses the full catalog but renders evidence exclusively
+through active-investigation selectors.
+
+### Feature-local investigation controller
+
+React owns only transient selection, tab, error, and ready-checkpoint state.
+Investigation facts remain in the framework-independent engine. IAM-001 uses a
+canonical seed, refresh starts a new session, and no state is persisted.
+
 ### Presentation ownership
 
 The application shell owns skip navigation, global navigation, the main landmark, and the footer. Pages own product-specific composition. Small primitives own native button/link semantics, cards, badges, and evidence-panel structure. CSS tokens and global styles own shared visual decisions, responsive behavior, focus treatment, and reduced-motion handling.
 
-The scenario browser remains intentionally inactive: the current application
-does not connect the index to the browser or add gameplay. Its controls remain
-disabled and explanatory.
+The scenario browser imports the generated browse-safe index and exposes the
+IAM-001 card. Its landing-page and browser entry points lead to the playable
+IAM-001 investigation; other authored scenarios remain unavailable until their
+own UI milestone.
 
 ### Framework-independent domain behavior
 
@@ -109,21 +124,25 @@ omit hidden relevance, explanations, root-cause, and debrief data.
 The content pipeline is implemented as pure schema, parser, semantic-validation,
 and normalization modules. Those modules accept data or text and do not own
 filesystem access. The Node CLI owns YAML discovery and reads, aggregated error
-reporting, and atomic generated-index writes.
+reporting, and atomic writes for both generated artifacts.
 
 The committed public index contains exactly seven browse fields: ID, title,
 domain, difficulty, estimated minutes, concepts, and the first public symptom
 summary. It omits customer context, learning objectives, root causes,
 hypotheses, evidence and relevance, red herrings, remediation answers,
 communication quality, and debrief content. Full validated definitions are
-composer inputs and are not emitted into the public browser index.
+composer inputs and are not emitted into the public browser index. The typed
+playable catalog is generated from those same validated documents and is used
+only by the IAM-001 route loader; presentation renders active evidence through
+safe selectors rather than solution fields.
 
 `npm run validate:scenarios` fails on parsing, schema, or semantic errors.
-`npm run generate:scenarios` validates before writing. Production builds run
-that command as a pre-build validation gate before TypeScript and Vite, but the
-current application does not import its generated index. CI validates
-explicitly, regenerates the committed index, and fails when the result drifts
-from source control.
+`npm run generate:scenarios` validates before writing the index and catalog.
+Production builds run that command as a pre-build validation gate before
+TypeScript and Vite. The application imports the browse-safe index for the
+scenario browser and the typed catalog through the allow-listed IAM-001 loader.
+CI validates explicitly, regenerates both committed artifacts, and fails when
+either drifts from source control.
 
 ### Accessibility as behavior
 
@@ -149,11 +168,14 @@ The deployment workflow builds on GitHub-hosted runners and publishes only `dist
 
 ## Current milestone boundary
 
-Milestone 4 includes deterministic investigation initialization and commands;
-all-dependency evidence unlocking; optional budget accounting; idempotent
-evidence reopening; bookmarks; hypothesis history; action history; and UI-safe
-active-investigation evidence selectors. The browser is still inactive and
-does not consume the public index, composed instances, or investigation state.
-Investigation UI, diagnosis submission, scoring, remediation, communication,
-debrief, persistence, sharing, seeded routes, daily challenges, and UI
-integration remain later work.
+Milestone 5 makes IAM-001 playable from the landing page and scenario browser
+through a reversible ready-to-diagnose checkpoint. The static UI uses the
+canonical IAM-001 seed, engine-controlled evidence gating, safe evidence
+projections, bookmarks, hypothesis selection, an action trail, and a responsive
+three-region workspace that changes to accessible controlled tabs at 820px and
+below. FND-001 and every other authored scenario remain unavailable for play.
+
+Diagnosis submission, scoring, remediation, communication, debrief, progress
+persistence, sharing, daily challenges, multi-scenario randomization, and full
+scenario-browser filtering remain later work. No backend state, hidden solution
+classification, answer key, or scoring UI is part of this milestone.
