@@ -2,12 +2,12 @@
 
 SaaS Failure Lab is a free, open-source troubleshooting simulator for people who work between customers and engineering. It will teach evidence-driven investigation across APIs, identity, integrations, data flows, and browser behavior without requiring access to a real production environment.
 
-> Current status: Milestone 2 — Content System
+> Current status: Milestone 5 — IAM-001 investigation UI
 
-The repository now includes two fictional YAML scenarios, a validated content
-contract, and a deterministic generated public scenario index alongside the
-responsive application shell. The scenario browser remains intentionally
-inactive: the index is not connected to the UI, and there is no gameplay yet.
+The repository includes two fictional YAML scenarios, a validated content
+contract, and deterministic generated browse and playable catalogs. IAM-001 is
+playable from the landing page or scenario browser through a reversible
+ready-to-diagnose checkpoint. FND-001 remains authored but unavailable for play.
 
 ## Product constraints
 
@@ -15,7 +15,7 @@ inactive: the index is not connected to the UI, and there is no gameplay yet.
 - Scenario content will remain separate from React components
 - Authoritative scenario and scoring behavior will be deterministic
 - Engine behavior will be independently testable where practical
-- Progress will remain local for v1
+- IAM-001 uses local in-memory state only; no progress is persisted
 - Accessibility is a functional requirement
 
 ## Local development
@@ -53,8 +53,9 @@ npx playwright install chromium
 ```
 
 Use `npm run format` to format repository files. Scenario generation validates
-all YAML first and updates `src/generated/scenario-index.json` only when its
-deterministic output changes.
+all YAML first and updates both `src/generated/scenario-index.json` and
+`src/generated/scenario-catalog.ts` only when their deterministic output
+changes.
 
 ## Static build and deployment
 
@@ -68,9 +69,14 @@ GitHub Actions includes:
 The current application routes are:
 
 - `/` — product landing page
-- `/scenarios` — inactive scenario-browser shell
+- `/scenarios` — browse-safe scenario library with the IAM-001 entry
+- `/scenarios/iam-001` — playable canonical IAM investigation
 - `/how-it-works` — investigation-loop explanation
 - any unknown path — not-found recovery page
+
+Milestone 5 intentionally excludes diagnosis submission, scoring, remediation,
+communication, debrief, persistence, sharing, and multi-scenario play. The UI
+uses safe evidence selectors and contains no answer key or scoring interface.
 
 The deployment workflow supplies the repository base path to Vite. React Router uses that compiled base path, preserving clean navigation when the site is deployed below a domain root.
 
@@ -94,7 +100,10 @@ The deployment workflow supplies the repository base path to Vite. React Router 
 - [Milestone 1 implementation plan](docs/superpowers/plans/2026-09-16-milestone-1-design-system.md)
 - [Milestone 2 content-system design](docs/superpowers/specs/2026-09-24-milestone-2-content-system-design.md)
 - [Milestone 2 implementation plan](docs/superpowers/plans/2026-09-24-milestone-2-content-system.md)
+- [Milestone 5 investigation UI design](docs/superpowers/specs/2026-09-28-milestone-5-investigation-ui-design.md)
+- [Milestone 5 implementation plan](docs/superpowers/plans/2026-09-30-milestone-5-investigation-ui.md)
 
-The product design documents define a milestone-based roadmap. Milestone 2
-implements the YAML, Zod, semantic-validation, and public-index pipeline while
-deliberately leaving the browser shell inactive until gameplay work begins.
+The product design documents define a milestone-based roadmap. Milestone 5
+connects the validated catalogs and deterministic engine to IAM-001 only; later
+milestones add diagnosis, scoring, debrief, persistence, and more playable
+scenarios.

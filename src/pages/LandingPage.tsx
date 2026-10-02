@@ -55,8 +55,8 @@ export function LandingPage() {
             and learn troubleshooting patterns that transfer across products.
           </p>
           <div className="action-row">
-            <ActionLink to="/scenarios" variant="primary">
-              Start a random incident
+            <ActionLink to="/scenarios/iam-001" variant="primary">
+              Start an incident
             </ActionLink>
             <ActionLink to="/how-it-works">See how it works</ActionLink>
           </div>

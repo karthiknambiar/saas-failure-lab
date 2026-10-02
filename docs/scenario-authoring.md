@@ -40,6 +40,11 @@ The generated public index exposes only seven browse-safe fields: `id`, `title`,
 root causes, hypotheses, evidence and relevance, red herrings, remediation and
 communication correctness, and the debrief.
 
+`npm run generate:scenarios` writes both the browse-safe JSON index and the
+typed playable scenario catalog. Both come from the same validated YAML
+documents. React components must not render solution fields directly; active
+evidence is projected through the investigation selectors.
+
 ## Supported values
 
 - Domains: `fundamentals`, `api`, `identity`, `integrations`, `data`, `browser`
@@ -113,13 +118,14 @@ From the repository root, run:
 ```sh
 npm run validate:scenarios
 npm run generate:scenarios
-git diff -- src/generated/scenario-index.json
+git diff -- src/generated/scenario-index.json src/generated/scenario-catalog.ts
 ```
 
 Validation reads all YAML files and reports all parse, schema, and semantic
 problems it can collect in one run. Generation validates first, then updates the
-committed deterministic public index only when its content changed. Both CI and
-`npm run build` reject invalid scenarios; CI also rejects index drift.
+committed deterministic public index and typed playable catalog only when their
+content changes. Both CI and `npm run build` reject invalid scenarios; CI also
+rejects generated-artifact drift.
 
 An aggregated failure looks like this:
 

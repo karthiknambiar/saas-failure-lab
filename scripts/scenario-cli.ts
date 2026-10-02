@@ -19,6 +19,7 @@ import {
   serializeScenarioIndex,
 } from '../src/content/normalize-scenario'
 import { parseScenario } from '../src/content/parse-scenario'
+import { serializeScenarioCatalog } from '../src/content/serialize-scenario-catalog'
 import {
   type ScenarioDocument,
   validateScenarioDocuments,
@@ -29,6 +30,7 @@ export type ScenarioCommand = 'validate' | 'generate'
 export interface ScenarioCommandPaths {
   contentDirectory: string
   outputFile: string
+  catalogOutputFile: string
 }
 
 export interface ScenarioCommandResult {
@@ -38,11 +40,24 @@ export interface ScenarioCommandResult {
 
 export interface ScenarioCommandOperations {
   writeFile(filePath: string, content: string): Promise<void>
+  renameFile(sourceFile: string, destinationFile: string): Promise<void>
+  removeFile(filePath: string): Promise<void>
+}
+
+interface GeneratedArtifact {
+  outputFile: string
+  content: string
 }
 
 const defaultOperations: ScenarioCommandOperations = {
   async writeFile(filePath, content) {
     await writeFile(filePath, content)
+  },
+  async renameFile(sourceFile, destinationFile) {
+    await rename(sourceFile, destinationFile)
+  },
+  async removeFile(filePath) {
+    await rm(filePath, { force: true })
   },
 }
 
@@ -89,46 +104,152 @@ async function loadScenarioDocuments(contentDirectory: string): Promise<{
   return { documents, issues }
 }
 
-async function writeIndexIfChanged(
-  outputFile: string,
-  serializedIndex: string,
+async function writeArtifactsIfChanged(
+  artifacts: readonly GeneratedArtifact[],
   operations: ScenarioCommandOperations,
 ): Promise<void> {
-  let existingIndex: string | undefined
+  const stagedArtifacts: Array<{
+    destinationExisted: boolean
+    outputFile: string
+    temporaryFile: string
+  }> = []
+  const disposableBackupFiles = new Set<string>()
+  const commitRecords: Array<{
+    backupFile?: string
+    outputFile: string
+  }> = []
+  let activeFailure: unknown
+  let hasActiveFailure = false
 
   try {
-    existingIndex = await readFile(outputFile, 'utf8')
+    for (const artifact of artifacts) {
+      let existingContent: string | undefined
+
+      try {
+        existingContent = await readFile(artifact.outputFile, 'utf8')
+      } catch (error) {
+        if (!(
+          error instanceof Error &&
+          'code' in error &&
+          error.code === 'ENOENT'
+        )) {
+          throw error
+        }
+      }
+
+      if (
+        existingContent !== undefined &&
+        normalizeLineEndings(existingContent) ===
+          normalizeLineEndings(artifact.content)
+      ) {
+        continue
+      }
+
+      const outputDirectory = path.dirname(artifact.outputFile)
+      const temporaryFile = path.join(
+        outputDirectory,
+        `.${path.basename(artifact.outputFile)}.${process.pid}.${randomUUID()}.tmp`,
+      )
+      stagedArtifacts.push({
+        destinationExisted: existingContent !== undefined,
+        outputFile: artifact.outputFile,
+        temporaryFile,
+      })
+      await mkdir(outputDirectory, { recursive: true })
+      await operations.writeFile(temporaryFile, artifact.content)
+    }
+
+    for (const artifact of stagedArtifacts) {
+      let backupFile: string | undefined
+      if (artifact.destinationExisted) {
+        backupFile = path.join(
+          path.dirname(artifact.outputFile),
+          `.${path.basename(artifact.outputFile)}.${process.pid}.${randomUUID()}.bak`,
+        )
+        disposableBackupFiles.add(backupFile)
+        await operations.renameFile(artifact.outputFile, backupFile)
+      }
+
+      commitRecords.push({ backupFile, outputFile: artifact.outputFile })
+      await operations.renameFile(artifact.temporaryFile, artifact.outputFile)
+    }
   } catch (error) {
-    if (!(
-      error instanceof Error &&
-      'code' in error &&
-      error.code === 'ENOENT'
-    )) {
-      throw error
+    const rollbackFailures: Array<{
+      backupFile?: string
+      error: unknown
+    }> = []
+
+    for (const record of commitRecords.toReversed()) {
+      try {
+        await operations.removeFile(record.outputFile)
+        if (record.backupFile) {
+          await operations.renameFile(record.backupFile, record.outputFile)
+        }
+      } catch (rollbackError) {
+        if (record.backupFile) {
+          disposableBackupFiles.delete(record.backupFile)
+        }
+        rollbackFailures.push({
+          backupFile: record.backupFile,
+          error: rollbackError,
+        })
+      }
+    }
+
+    if (rollbackFailures.length > 0) {
+      const rollbackDetails = rollbackFailures
+        .map(({ error: rollbackError }) => errorMessage(rollbackError))
+        .join('; ')
+      const retainedBackups = rollbackFailures
+        .flatMap(({ backupFile }) => (backupFile ? [backupFile] : []))
+        .join(', ')
+      activeFailure = new AggregateError(
+        [
+          error,
+          ...rollbackFailures.map(({ error: rollbackError }) => rollbackError),
+        ],
+        `Failed to write generated artifacts: ${errorMessage(error)}. Rollback failed: ${rollbackDetails}.${retainedBackups ? ` Recovery backups retained: ${retainedBackups}.` : ''}`,
+        { cause: error },
+      )
+    } else {
+      activeFailure = error
+    }
+    hasActiveFailure = true
+  } finally {
+    const cleanupResults = await Promise.allSettled(
+      [
+        ...stagedArtifacts.map(({ temporaryFile }) => temporaryFile),
+        ...disposableBackupFiles,
+      ].map((filePath) => operations.removeFile(filePath)),
+    )
+    const cleanupErrors = cleanupResults.flatMap((result) =>
+      result.status === 'rejected' ? [result.reason] : [],
+    )
+
+    if (cleanupErrors.length > 0) {
+      const cleanupDetails = cleanupErrors.map(errorMessage).join('; ')
+      if (hasActiveFailure) {
+        const activeErrors =
+          activeFailure instanceof AggregateError
+            ? activeFailure.errors
+            : [activeFailure]
+        activeFailure = new AggregateError(
+          [...activeErrors, ...cleanupErrors],
+          `${errorMessage(activeFailure)} Cleanup failed: ${cleanupDetails}.`,
+          { cause: activeFailure },
+        )
+      } else {
+        activeFailure = new AggregateError(
+          cleanupErrors,
+          `Failed to clean generated artifacts: ${cleanupDetails}.`,
+          { cause: cleanupErrors[0] },
+        )
+        hasActiveFailure = true
+      }
     }
   }
 
-  if (
-    existingIndex !== undefined &&
-    normalizeLineEndings(existingIndex) ===
-      normalizeLineEndings(serializedIndex)
-  ) {
-    return
-  }
-
-  const outputDirectory = path.dirname(outputFile)
-  const temporaryFile = path.join(
-    outputDirectory,
-    `.${path.basename(outputFile)}.${process.pid}.${randomUUID()}.tmp`,
-  )
-  await mkdir(outputDirectory, { recursive: true })
-
-  try {
-    await operations.writeFile(temporaryFile, serializedIndex)
-    await rename(temporaryFile, outputFile)
-  } finally {
-    await rm(temporaryFile, { force: true })
-  }
+  if (hasActiveFailure) throw activeFailure
 }
 
 export async function runScenarioCommand(
@@ -146,9 +267,17 @@ export async function runScenarioCommand(
 
     if (command === 'generate') {
       const index = normalizeScenarioIndex(documents)
-      await writeIndexIfChanged(
-        paths.outputFile,
-        serializeScenarioIndex(index),
+      await writeArtifactsIfChanged(
+        [
+          {
+            outputFile: paths.outputFile,
+            content: serializeScenarioIndex(index),
+          },
+          {
+            outputFile: paths.catalogOutputFile,
+            content: await serializeScenarioCatalog(documents),
+          },
+        ],
         operations,
       )
       return {
@@ -177,6 +306,7 @@ async function main(): Promise<void> {
   const result = await runScenarioCommand(command, {
     contentDirectory: 'content/scenarios',
     outputFile: 'src/generated/scenario-index.json',
+    catalogOutputFile: 'src/generated/scenario-catalog.ts',
   })
   const print = result.success ? console.log : console.error
   print(result.output)
