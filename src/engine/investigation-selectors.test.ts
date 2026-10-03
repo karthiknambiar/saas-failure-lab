@@ -9,6 +9,7 @@ import {
 } from './investigation-engine'
 import {
   getAvailableEvidenceIds,
+  getDiagnosisResultView,
   getInvestigationEvidenceViews,
 } from './investigation-selectors'
 
@@ -123,5 +124,176 @@ describe('investigation evidence selectors', () => {
         scenarioVersion: state.scenarioVersion + 1,
       }),
     ).toThrow(expect.objectContaining({ code: 'SCENARIO_STATE_MISMATCH' }))
+  })
+})
+
+describe('diagnosis result selector', () => {
+  function completedDiagnosis() {
+    const { instance, state } = selectorFixture()
+    const selected = applyInvestigationCommand(instance, state, {
+      type: 'select_hypothesis',
+      hypothesisId: 'reporting-role-removed',
+    })
+    const completed = applyInvestigationCommand(instance, selected, {
+      type: 'submit_diagnosis',
+    })
+
+    return { instance, state: completed }
+  }
+
+  function completedFullScoreDiagnosis() {
+    const source = createScenarioFixture() as ScenarioSource
+    const template = source.evidence[0]
+    source.evidence = [
+      {
+        ...structuredClone(template),
+        id: 'critical-one',
+        relevance: 'critical',
+        unlock_after: [],
+      },
+      {
+        ...structuredClone(template),
+        id: 'critical-two',
+        relevance: 'critical',
+        unlock_after: [],
+      },
+    ]
+    const instance = composeScenario(source, 'full-score-selector-seed')
+    const investigating = applyInvestigationCommand(
+      instance,
+      createInvestigation(instance, 1_000),
+      { type: 'begin_investigation' },
+    )
+    const bookmarked = ['critical-one', 'critical-two'].reduce(
+      (current, evidenceId) => {
+        const opened = applyInvestigationCommand(instance, current, {
+          type: 'open_evidence',
+          evidenceId,
+        })
+        return applyInvestigationCommand(instance, opened, {
+          type: 'bookmark_evidence',
+          evidenceId,
+        })
+      },
+      investigating,
+    )
+    const selected = applyInvestigationCommand(instance, bookmarked, {
+      type: 'select_hypothesis',
+      hypothesisId: instance.scenario.root_cause.id,
+    })
+
+    return {
+      instance,
+      state: applyInvestigationCommand(instance, selected, {
+        type: 'submit_diagnosis',
+      }),
+    }
+  }
+
+  it('returns the exact safe public result view', () => {
+    const { instance, state } = completedDiagnosis()
+
+    expect(getDiagnosisResultView(instance, state)).toEqual({
+      selectedHypothesisId: 'reporting-role-removed',
+      selectedHypothesisLabel: 'The affected users lost their reporting role.',
+      total: 70,
+      outcome: 'strong',
+    })
+  })
+
+  it('returns a strong 100-point view after bookmarking every critical item', () => {
+    const { instance, state } = completedFullScoreDiagnosis()
+
+    expect(getDiagnosisResultView(instance, state)).toEqual({
+      selectedHypothesisId: 'reporting-role-removed',
+      selectedHypothesisLabel: 'The affected users lost their reporting role.',
+      total: 100,
+      outcome: 'strong',
+    })
+  })
+
+  it.each([
+    [70, 'strong'],
+    [100, 'strong'],
+    [30, 'partial'],
+    [69, 'partial'],
+    [0, 'needs_revision'],
+    [29, 'needs_revision'],
+  ] as const)('classifies total %i as %s', (total, outcome) => {
+    const { instance, state } = completedDiagnosis()
+    const scored = {
+      ...state,
+      submission: {
+        ...state.submission!,
+        score: { ...state.submission!.score, total },
+      },
+    }
+
+    expect(getDiagnosisResultView(instance, scored).outcome).toBe(outcome)
+  })
+
+  it('requires matching identity and a completed submission', () => {
+    const { instance, state } = completedDiagnosis()
+
+    expect(() =>
+      getDiagnosisResultView(instance, {
+        ...state,
+        seed: 'different-seed',
+      }),
+    ).toThrow(expect.objectContaining({ code: 'SCENARIO_STATE_MISMATCH' }))
+    expect(() =>
+      getDiagnosisResultView(instance, { ...state, status: 'investigating' }),
+    ).toThrow(expect.objectContaining({ code: 'INVALID_STATUS' }))
+    expect(() =>
+      getDiagnosisResultView(instance, { ...state, submission: undefined }),
+    ).toThrow(expect.objectContaining({ code: 'INVALID_STATUS' }))
+  })
+
+  it('does not leak diagnosis scoring or scenario solution internals', () => {
+    const { instance, state } = completedDiagnosis()
+    const serialized = JSON.stringify(getDiagnosisResultView(instance, state))
+
+    for (const sensitiveToken of [
+      'diagnosisPoints',
+      'evidencePoints',
+      'root_cause',
+      'critical',
+      'relevance',
+      'explanation',
+      'remediation',
+      'communication',
+      'debrief',
+      'actions',
+      'bookmarked',
+      'scenario',
+    ]) {
+      expect(serialized).not.toContain(sensitiveToken)
+    }
+  })
+
+  it('does not mutate the instance or submitted state', () => {
+    const { instance, state } = completedDiagnosis()
+    const instanceBefore = structuredClone(instance)
+    const stateBefore = structuredClone(state)
+
+    getDiagnosisResultView(instance, state)
+
+    expect(instance).toEqual(instanceBefore)
+    expect(state).toEqual(stateBefore)
+  })
+
+  it('fails clearly when the submitted hypothesis is no longer authored', () => {
+    const { instance, state } = completedDiagnosis()
+    const invalid = {
+      ...state,
+      submission: {
+        ...state.submission!,
+        selectedHypothesisId: 'missing-hypothesis',
+      },
+    }
+
+    expect(() => getDiagnosisResultView(instance, invalid)).toThrow(
+      'Submitted hypothesis "missing-hypothesis" is not authored by the scenario.',
+    )
   })
 })
