@@ -48,6 +48,53 @@ function startedInvestigation(source = evidenceChainSource()) {
   return { instance, state }
 }
 
+function diagnosisSource(criticalEvidenceCount = 3): ScenarioSource {
+  const source = sourceFixture()
+  const template = source.evidence[0]
+
+  source.evidence = Array.from(
+    { length: criticalEvidenceCount },
+    (_, index) => ({
+      ...structuredClone(template),
+      id: `critical-${index + 1}`,
+      relevance: 'critical',
+      unlock_after: [],
+    }),
+  )
+
+  return source
+}
+
+function submitWithBookmarks(
+  source = diagnosisSource(),
+  selectedHypothesisId = 'reporting-role-removed',
+  bookmarkedEvidenceIds = source.evidence.map(({ id }) => id),
+) {
+  const { instance, state } = startedInvestigation(source)
+  const bookmarked = bookmarkedEvidenceIds.reduce((current, evidenceId) => {
+    const opened = applyInvestigationCommand(instance, current, {
+      type: 'open_evidence',
+      evidenceId,
+    })
+    return applyInvestigationCommand(instance, opened, {
+      type: 'bookmark_evidence',
+      evidenceId,
+    })
+  }, state)
+  const selected = applyInvestigationCommand(instance, bookmarked, {
+    type: 'select_hypothesis',
+    hypothesisId: selectedHypothesisId,
+  })
+
+  return {
+    instance,
+    state: selected,
+    submitted: applyInvestigationCommand(instance, selected, {
+      type: 'submit_diagnosis',
+    }),
+  }
+}
+
 describe('createInvestigation', () => {
   it('creates deterministic intro state from explicit inputs', () => {
     const instance = instanceFixture()
@@ -483,5 +530,152 @@ describe('notebook command status', () => {
     expect(() => applyInvestigationCommand(instance, intro, command)).toThrow(
       expect.objectContaining({ code: 'INVALID_STATUS' }),
     )
+  })
+})
+
+describe('diagnosis submission', () => {
+  it('records a terminal full-score submission with exact action order', () => {
+    const { state, submitted } = submitWithBookmarks()
+
+    expect(submitted).toMatchObject({
+      status: 'completed',
+      submission: {
+        selectedHypothesisId: 'reporting-role-removed',
+        score: { total: 100, diagnosisPoints: 70, evidencePoints: 30 },
+      },
+    })
+    expect(submitted.actions).toEqual([
+      { sequence: 1, type: 'begin_investigation' },
+      {
+        sequence: 2,
+        type: 'open_evidence',
+        evidenceId: 'critical-1',
+        cost: 1,
+      },
+      { sequence: 3, type: 'bookmark_evidence', evidenceId: 'critical-1' },
+      {
+        sequence: 4,
+        type: 'open_evidence',
+        evidenceId: 'critical-2',
+        cost: 1,
+      },
+      { sequence: 5, type: 'bookmark_evidence', evidenceId: 'critical-2' },
+      {
+        sequence: 6,
+        type: 'open_evidence',
+        evidenceId: 'critical-3',
+        cost: 1,
+      },
+      { sequence: 7, type: 'bookmark_evidence', evidenceId: 'critical-3' },
+      {
+        sequence: 8,
+        type: 'select_hypothesis',
+        hypothesisId: 'reporting-role-removed',
+      },
+      { sequence: 9, type: 'submit_diagnosis' },
+    ])
+    expect(state.status).toBe('investigating')
+    expect(state.submission).toBeUndefined()
+  })
+
+  it('awards evidence-only points for an incorrect diagnosis', () => {
+    const { submitted } = submitWithBookmarks(
+      diagnosisSource(),
+      'reporting-service-outage',
+    )
+
+    expect(submitted.submission?.score).toEqual({
+      total: 30,
+      diagnosisPoints: 0,
+      evidencePoints: 30,
+    })
+  })
+
+  it('uses rounded critical-evidence points during submission', () => {
+    const source = diagnosisSource(4)
+    const { submitted } = submitWithBookmarks(
+      source,
+      'reporting-service-outage',
+      ['critical-1'],
+    )
+
+    expect(submitted.submission?.score).toEqual({
+      total: 8,
+      diagnosisPoints: 0,
+      evidencePoints: 8,
+    })
+  })
+
+  it('requires a selected hypothesis without mutating the state', () => {
+    const { instance, state } = startedInvestigation(diagnosisSource())
+    const before = structuredClone(state)
+
+    expect(() =>
+      applyInvestigationCommand(instance, state, { type: 'submit_diagnosis' }),
+    ).toThrow(expect.objectContaining({ code: 'MISSING_HYPOTHESIS' }))
+    expect(state).toEqual(before)
+  })
+
+  it('rejects submission from intro status', () => {
+    const instance = instanceFixture(diagnosisSource())
+    const intro = createInvestigation(instance, 1_000)
+
+    expect(() =>
+      applyInvestigationCommand(instance, intro, { type: 'submit_diagnosis' }),
+    ).toThrow(expect.objectContaining({ code: 'INVALID_STATUS' }))
+  })
+
+  it('rejects duplicate submissions', () => {
+    const { instance, submitted } = submitWithBookmarks()
+
+    expect(() =>
+      applyInvestigationCommand(instance, submitted, {
+        type: 'submit_diagnosis',
+      }),
+    ).toThrow(expect.objectContaining({ code: 'INVALID_STATUS' }))
+  })
+
+  it.each([
+    { type: 'begin_investigation' } as const,
+    { type: 'open_evidence', evidenceId: 'critical-1' } as const,
+    { type: 'bookmark_evidence', evidenceId: 'critical-1' } as const,
+    { type: 'unbookmark_evidence', evidenceId: 'critical-1' } as const,
+    {
+      type: 'select_hypothesis',
+      hypothesisId: 'reporting-service-outage',
+    } as const,
+    { type: 'submit_diagnosis' } as const,
+  ])('blocks $type after completion', (command) => {
+    const { instance, submitted } = submitWithBookmarks()
+    const before = structuredClone(submitted)
+
+    expect(() =>
+      applyInvestigationCommand(instance, submitted, command),
+    ).toThrow(expect.objectContaining({ code: 'INVALID_STATUS' }))
+    expect(submitted).toEqual(before)
+  })
+
+  it('does not mutate the scenario instance or prior state', () => {
+    const source = diagnosisSource()
+    const { instance, state } = startedInvestigation(source)
+    const opened = applyInvestigationCommand(instance, state, {
+      type: 'open_evidence',
+      evidenceId: 'critical-1',
+    })
+    const bookmarked = applyInvestigationCommand(instance, opened, {
+      type: 'bookmark_evidence',
+      evidenceId: 'critical-1',
+    })
+    const selected = applyInvestigationCommand(instance, bookmarked, {
+      type: 'select_hypothesis',
+      hypothesisId: 'reporting-role-removed',
+    })
+    const instanceBefore = structuredClone(instance)
+    const stateBefore = structuredClone(selected)
+
+    applyInvestigationCommand(instance, selected, { type: 'submit_diagnosis' })
+
+    expect(instance).toEqual(instanceBefore)
+    expect(selected).toEqual(stateBefore)
   })
 })
