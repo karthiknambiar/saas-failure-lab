@@ -8,7 +8,7 @@ async function beginIamInvestigation(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Begin investigation' }).click()
 }
 
-test('investigates IAM-001 through the reversible ready checkpoint', async ({
+test('submits an IAM-001 diagnosis from the ready checkpoint', async ({
   page,
 }) => {
   await beginIamInvestigation(page)
@@ -35,22 +35,28 @@ test('investigates IAM-001 through the reversible ready checkpoint', async ({
     page.getByRole('heading', { name: 'Ready to diagnose' }),
   ).toBeFocused()
   await expect(page.getByText('Role audit history')).toBeVisible()
-  await expect(page.getByText('4 of 5 evidence sources opened')).toBeVisible()
-  await expect(
-    page.getByText('Diagnosis continues in the next product milestone.'),
-  ).toBeVisible()
-  await expect(page.getByText(/score|correct answer/i)).toHaveCount(0)
-  await expect(
-    page.getByText(/root cause|critical|supporting|red herring|debrief/i),
-  ).toHaveCount(0)
-  await expect(
-    page.getByRole('button', { name: /submit|diagnose|score/i }),
-  ).toHaveCount(0)
+  const submit = page.getByRole('button', { name: 'Submit diagnosis' })
+  await submit.focus()
+  await submit.press('Enter')
 
-  await page.getByRole('button', { name: 'Return to investigation' }).click()
   await expect(
-    page.getByRole('button', { name: 'Ready to diagnose' }),
+    page.getByRole('heading', { name: 'Diagnosis submitted' }),
   ).toBeFocused()
+  await expect(page.getByText('Strong evidence-backed diagnosis')).toBeVisible()
+  await expect(
+    page.getByText(
+      /root cause|critical|supporting|red herring|remediation|communication|debrief/i,
+    ),
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('heading', { name: 'Investigation tools' }),
+  ).toHaveCount(0)
+  await expect(page.getByRole('button')).toHaveCount(1)
+
+  await page.getByRole('button', { name: 'Start over' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Login works, feature does not' }),
+  ).toBeVisible()
 })
 
 test('enters IAM-001 from the landing CTA and browser card', async ({
