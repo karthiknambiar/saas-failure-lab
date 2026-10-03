@@ -20,7 +20,7 @@ There is no runtime backend, authentication system, database, remote AI dependen
 
 ## Product boundaries
 
-Milestone 5 implements the IAM-001 investigation UI while preserving the
+Milestone 6 implements the IAM-001 investigation and diagnosis result while preserving the
 static architecture:
 
 ```text
@@ -31,25 +31,28 @@ browse-safe index + typed playable catalog
 React investigation controller
     ↓ safe evidence selectors
 accessible desktop/mobile investigation UI
+    ↓ deterministic diagnosis/evidence scoring
+safe completed-result view
     ↓
 static HTML, CSS, and JavaScript in dist/
 ```
 
-The content pipeline, deterministic composer, investigation engine, and
-accessible IAM-001 UI are implemented. Future milestones will add scoring and
-versioned browser-local progress storage.
+The content pipeline, deterministic composer, investigation engine, accessible
+IAM-001 UI, and deterministic scoring are implemented. Future milestones will
+add remediation, communication, efficiency feedback, detailed breakdowns,
+explanations, debrief, and versioned browser-local progress storage.
 
 The boundaries have clear responsibilities:
 
 - **Content:** Contributor-readable scenario definitions outside React.
 - **Validation:** Build/CI-time parsing, Zod validation, semantic checks, and normalization.
-- **Engine:** Pure TypeScript composition, investigation transitions, and explainable scoring.
-- **Presentation:** Accessible React views that render engine state without embedding answer keys or scoring rules.
-- **Storage:** A versioned adapter for local progress with corruption recovery and migrations.
+- **Engine:** Pure TypeScript composition, investigation transitions, and deterministic diagnosis/evidence scoring.
+- **Presentation:** Accessible React views that render safe result summaries without embedding answer keys or scoring explanations.
+- **Storage:** Deferred; a future versioned adapter may provide local progress with corruption recovery and migrations.
 
-The routing, presentation, content, validation, composition, and investigation
-boundaries now exist. Scoring and storage remain planned boundaries rather than
-empty speculative interfaces.
+The routing, presentation, content, validation, composition, investigation, and
+scoring boundaries now exist. Storage remains a planned boundary rather than an
+empty speculative interface.
 
 ## Architecture decisions
 
@@ -99,9 +102,9 @@ own UI milestone.
 
 ### Framework-independent domain behavior
 
-Scenario composition and investigation transitions are plain TypeScript. Future
-scoring will remain framework-independent wherever practical. React will consume
-public engine results rather than own hidden business rules. This permits
+Scenario composition, investigation transitions, and diagnosis scoring are plain
+TypeScript. React consumes safe engine results rather than owning hidden business
+rules. This permits
 deterministic unit tests without rendering UI.
 
 ### Deterministic scenario composition
@@ -157,8 +160,8 @@ The shell uses semantic landmarks, a skip link, active-route semantics, a native
 - **GitHub Actions:** repeatable clean-install quality gates
 
 Engine suites cover deterministic seed selection, scenario composition, source
-isolation, investigation transitions, budget behavior, and safe evidence
-projections. Scenario contract suites cover both valid content and
+isolation, investigation transitions, deterministic diagnosis/evidence scoring,
+budget behavior, and safe evidence projections. Scenario contract suites cover both valid content and
 representative failure modes, including traversal of real authored efficient
 paths.
 
@@ -168,14 +171,17 @@ The deployment workflow builds on GitHub-hosted runners and publishes only `dist
 
 ## Current milestone boundary
 
-Milestone 5 makes IAM-001 playable from the landing page and scenario browser
-through a reversible ready-to-diagnose checkpoint. The static UI uses the
-canonical IAM-001 seed, engine-controlled evidence gating, safe evidence
-projections, bookmarks, hypothesis selection, an action trail, and a responsive
-three-region workspace that changes to accessible controlled tabs at 820px and
-below. FND-001 and every other authored scenario remain unavailable for play.
+Milestone 6 makes IAM-001 playable from the landing page and scenario browser
+through a diagnosis result. The static UI uses the canonical IAM-001 seed,
+engine-controlled evidence gating, safe evidence projections, bookmarks,
+hypothesis selection, an action trail, deterministic 70/30 diagnosis/evidence
+scoring, and a responsive three-region workspace that changes to accessible
+controlled tabs at 820px and below. The result exposes only the learner's
+submitted diagnosis, total score, and broad outcome, never a canonical answer
+or score explanation. FND-001 and every other authored scenario remain
+unavailable for play.
 
-Diagnosis submission, scoring, remediation, communication, debrief, progress
-persistence, sharing, daily challenges, multi-scenario randomization, and full
-scenario-browser filtering remain later work. No backend state, hidden solution
-classification, answer key, or scoring UI is part of this milestone.
+Remediation, communication, efficiency, detailed score breakdowns,
+explanations, debrief, progress persistence, sharing, daily challenges,
+multi-scenario randomization, and full scenario-browser filtering remain later
+work. No backend state or persistence is part of this milestone.
