@@ -75,6 +75,18 @@ export function useInvestigationController(
     send({ type: 'select_hypothesis', hypothesisId })
   }
 
+  function submitDiagnosis(): boolean {
+    return send({ type: 'submit_diagnosis' })
+  }
+
+  function startOver() {
+    setState(createInvestigation(instance, Date.now()))
+    setSelectedEvidenceId(undefined)
+    setActiveTab('tools')
+    setReady(false)
+    setError(undefined)
+  }
+
   return {
     state,
     evidenceViews,
@@ -87,6 +99,8 @@ export function useInvestigationController(
     selectEvidence,
     toggleBookmark,
     selectHypothesis,
+    submitDiagnosis,
+    startOver,
     setActiveTab,
     setReady,
   }
