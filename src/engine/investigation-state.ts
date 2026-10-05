@@ -1,4 +1,6 @@
-export type InvestigationStatus = 'intro' | 'investigating'
+import type { DiagnosisScore } from './diagnosis-scoring'
+
+export type InvestigationStatus = 'intro' | 'investigating' | 'completed'
 
 export type InvestigationErrorCode =
   | 'INVALID_STARTED_AT'
@@ -9,6 +11,7 @@ export type InvestigationErrorCode =
   | 'INSUFFICIENT_BUDGET'
   | 'EVIDENCE_NOT_OPENED'
   | 'UNKNOWN_HYPOTHESIS'
+  | 'MISSING_HYPOTHESIS'
 
 export interface BeginInvestigationAction {
   sequence: number
@@ -34,11 +37,22 @@ export interface SelectHypothesisAction {
   hypothesisId: string
 }
 
+export interface SubmitDiagnosisAction {
+  sequence: number
+  type: 'submit_diagnosis'
+}
+
+export interface DiagnosisSubmission {
+  selectedHypothesisId: string
+  score: DiagnosisScore
+}
+
 export type InvestigationAction =
   | BeginInvestigationAction
   | OpenEvidenceAction
   | BookmarkEvidenceAction
   | SelectHypothesisAction
+  | SubmitDiagnosisAction
 
 export type InvestigationCommand =
   | { type: 'begin_investigation' }
@@ -46,6 +60,7 @@ export type InvestigationCommand =
   | { type: 'bookmark_evidence'; evidenceId: string }
   | { type: 'unbookmark_evidence'; evidenceId: string }
   | { type: 'select_hypothesis'; hypothesisId: string }
+  | { type: 'submit_diagnosis' }
 
 export interface InvestigationState {
   scenarioId: string
@@ -56,6 +71,7 @@ export interface InvestigationState {
   openedEvidenceIds: string[]
   bookmarkedEvidenceIds: string[]
   selectedHypothesisId?: string
+  submission?: DiagnosisSubmission
   hypothesisHistory: Array<{
     hypothesisId: string
     atAction: number

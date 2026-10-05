@@ -17,9 +17,8 @@ describe('ReadyToDiagnose', () => {
         instance={instance()}
         selectedHypothesisId="reporting-service-outage"
         bookmarkedEvidenceIds={['service-status']}
-        openedCount={2}
-        totalEvidence={5}
         onReturn={vi.fn()}
+        onSubmit={vi.fn()}
       />,
     )
 
@@ -30,22 +29,21 @@ describe('ReadyToDiagnose', () => {
       screen.getByText(/reporting service is experiencing an outage/i),
     ).toBeVisible()
     expect(screen.getByText('Service status')).toBeVisible()
-    expect(screen.getByText('2 of 5 evidence sources opened')).toBeVisible()
-    expect(document.body).not.toHaveTextContent(
-      /correct|score|root cause|submit/i,
-    )
+    expect(document.body).not.toHaveTextContent(/correct|score|root cause/i)
+    expect(document.body).not.toHaveTextContent(/evidence sources opened/i)
+    expect(document.body).not.toHaveTextContent(/next product milestone/i)
   })
 
-  it('returns to the investigation without any submission action', () => {
+  it('submits the safe confirmation and can return to the investigation', () => {
     const onReturn = vi.fn()
+    const onSubmit = vi.fn()
     render(
       <ReadyToDiagnose
         instance={instance()}
         selectedHypothesisId="reporting-service-outage"
         bookmarkedEvidenceIds={[]}
-        openedCount={1}
-        totalEvidence={5}
         onReturn={onReturn}
+        onSubmit={onSubmit}
       />,
     )
 
@@ -53,8 +51,7 @@ describe('ReadyToDiagnose', () => {
       screen.getByRole('button', { name: 'Return to investigation' }),
     )
     expect(onReturn).toHaveBeenCalledOnce()
-    expect(
-      screen.queryByRole('button', { name: /submit|diagnose|score/i }),
-    ).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Submit diagnosis' }))
+    expect(onSubmit).toHaveBeenCalledOnce()
   })
 })

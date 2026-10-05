@@ -2,8 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 
 import { ActionLink } from '../../components/ActionLink'
+import { getDiagnosisResultView } from '../../engine/investigation-selectors'
 import type { ScenarioInstance } from '../../engine/scenario-instance'
 import { IncidentIntro } from './IncidentIntro'
+import { DiagnosisResult } from './DiagnosisResult'
 import { InvestigationWorkspace } from './InvestigationWorkspace'
 import { loadInvestigationScenario } from './load-investigation'
 import { ReadyToDiagnose } from './ReadyToDiagnose'
@@ -58,18 +60,26 @@ function PlayableInvestigation({ instance }: { instance: ScenarioInstance }) {
     return <IncidentIntro instance={instance} onBegin={controller.begin} />
   }
 
+  if (controller.state.status === 'completed') {
+    return (
+      <DiagnosisResult
+        result={getDiagnosisResultView(instance, controller.state)}
+        onStartOver={controller.startOver}
+      />
+    )
+  }
+
   if (controller.ready && controller.state.selectedHypothesisId) {
     return (
       <ReadyToDiagnose
         instance={instance}
         selectedHypothesisId={controller.state.selectedHypothesisId}
         bookmarkedEvidenceIds={controller.state.bookmarkedEvidenceIds}
-        openedCount={controller.state.openedEvidenceIds.length}
-        totalEvidence={controller.evidenceViews.length}
         onReturn={() => {
           restoreReadyFocus.current = true
           controller.setReady(false)
         }}
+        onSubmit={controller.submitDiagnosis}
       />
     )
   }

@@ -85,7 +85,7 @@ describe('InvestigationPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('opens a reversible ready checkpoint without changing routes or submitting', () => {
+  it('submits a selected diagnosis and starts over from the submitted result', () => {
     renderInvestigation('/scenarios/iam-001')
     fireEvent.click(screen.getByRole('button', { name: 'Begin investigation' }))
     fireEvent.click(
@@ -98,11 +98,6 @@ describe('InvestigationPage', () => {
     expect(
       screen.getByRole('heading', { name: 'Ready to diagnose' }),
     ).toHaveFocus()
-    expect(screen.queryByRole('textbox')).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: /submit|score/i }),
-    ).not.toBeInTheDocument()
-
     fireEvent.click(
       screen.getByRole('button', { name: 'Return to investigation' }),
     )
@@ -110,6 +105,32 @@ describe('InvestigationPage', () => {
       screen.getByRole('button', { name: 'Ready to diagnose' }),
     ).toHaveFocus()
     expect(screen.getByRole('heading', { name: 'Case notebook' })).toBeVisible()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ready to diagnose' }))
+    const submit = screen.getByRole('button', { name: 'Submit diagnosis' })
+    submit.focus()
+    fireEvent.keyDown(submit, { key: 'Enter' })
+
+    expect(
+      screen.getByRole('heading', { name: 'Diagnosis submitted' }),
+    ).toHaveFocus()
+    expect(screen.getByText('Strong evidence-backed diagnosis')).toBeVisible()
+    expect(
+      screen.queryByRole('heading', { name: 'Investigation tools' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Ready to diagnose' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryAllByRole('button')).toHaveLength(1)
+    expect(screen.queryAllByRole('radio')).toHaveLength(0)
+    expect(document.body).not.toHaveTextContent(
+      /root cause|critical|supporting|red herring|remediation|communication|debrief/i,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start over' }))
+    expect(
+      screen.getByRole('heading', { name: 'Login works, feature does not' }),
+    ).toBeInTheDocument()
   })
 })
 

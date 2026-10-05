@@ -7,6 +7,7 @@ import type {
   InvestigationErrorCode,
   InvestigationState,
 } from './investigation-state'
+import { scoreDiagnosis } from './diagnosis-scoring'
 
 export class InvestigationTransitionError extends Error {
   constructor(
@@ -201,6 +202,41 @@ function selectHypothesis(
   }
 }
 
+function submitDiagnosis(
+  instance: ScenarioInstance,
+  state: InvestigationState,
+): InvestigationState {
+  requireInvestigating(state)
+  if (!state.selectedHypothesisId) {
+    fail(
+      'MISSING_HYPOTHESIS',
+      'A hypothesis must be selected before submitting a diagnosis.',
+    )
+  }
+
+  const score = scoreDiagnosis({
+    canonicalHypothesisId: instance.scenario.root_cause.id,
+    selectedHypothesisId: state.selectedHypothesisId,
+    criticalEvidenceIds: instance.scenario.evidence
+      .filter(({ relevance }) => relevance === 'critical')
+      .map(({ id }) => id),
+    bookmarkedEvidenceIds: state.bookmarkedEvidenceIds,
+  })
+
+  return {
+    ...state,
+    status: 'completed',
+    submission: {
+      selectedHypothesisId: state.selectedHypothesisId,
+      score,
+    },
+    actions: [
+      ...state.actions,
+      { sequence: state.actions.length + 1, type: 'submit_diagnosis' },
+    ],
+  }
+}
+
 export function applyInvestigationCommand(
   instance: ScenarioInstance,
   state: InvestigationState,
@@ -240,6 +276,10 @@ export function applyInvestigationCommand(
 
   if (command.type === 'select_hypothesis') {
     return selectHypothesis(instance, state, command.hypothesisId)
+  }
+
+  if (command.type === 'submit_diagnosis') {
+    return submitDiagnosis(instance, state)
   }
 
   const exhaustive: never = command

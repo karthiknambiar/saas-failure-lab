@@ -2,12 +2,13 @@
 
 SaaS Failure Lab is a free, open-source troubleshooting simulator for people who work between customers and engineering. It will teach evidence-driven investigation across APIs, identity, integrations, data flows, and browser behavior without requiring access to a real production environment.
 
-> Current status: Milestone 5 — IAM-001 investigation UI
+> Current status: Milestone 6 — IAM-001 diagnosis scoring
 
 The repository includes two fictional YAML scenarios, a validated content
 contract, and deterministic generated browse and playable catalogs. IAM-001 is
-playable from the landing page or scenario browser through a reversible
-ready-to-diagnose checkpoint. FND-001 remains authored but unavailable for play.
+playable from the landing page or scenario browser through a diagnosis result.
+IAM-001 scoring is deterministic and kept in browser memory only. FND-001 remains
+authored but unavailable for play.
 
 ## Product constraints
 
@@ -15,7 +16,7 @@ ready-to-diagnose checkpoint. FND-001 remains authored but unavailable for play.
 - Scenario content will remain separate from React components
 - Authoritative scenario and scoring behavior will be deterministic
 - Engine behavior will be independently testable where practical
-- IAM-001 uses local in-memory state only; no progress is persisted
+- IAM-001 uses local in-memory state only; no progress or results are persisted
 - Accessibility is a functional requirement
 
 ## Local development
@@ -74,9 +75,12 @@ The current application routes are:
 - `/how-it-works` — investigation-loop explanation
 - any unknown path — not-found recovery page
 
-Milestone 5 intentionally excludes diagnosis submission, scoring, remediation,
-communication, debrief, persistence, sharing, and multi-scenario play. The UI
-uses safe evidence selectors and contains no answer key or scoring interface.
+Milestone 6 includes diagnosis submission and a deterministic 70/30 score: 70
+points for the submitted diagnosis and 30 for bookmarked evidence. The result
+view intentionally gives only the submitted diagnosis, total, and broad outcome;
+it does not reveal answer keys or detailed scoring explanations. Remediation,
+communication, efficiency, detailed breakdown, explanation, debrief,
+persistence, sharing, and multi-scenario play remain deferred.
 
 The deployment workflow supplies the repository base path to Vite. React Router uses that compiled base path, preserving clean navigation when the site is deployed below a domain root.
 
@@ -93,6 +97,7 @@ The deployment workflow supplies the repository base path to Vite. React Router 
 ## Architecture and planning
 
 - [Architecture](docs/architecture.md)
+- [Scoring rubric](docs/scoring.md)
 - [Scenario authoring guide](docs/scenario-authoring.md)
 - [Milestone 0 design](docs/superpowers/specs/2026-09-15-milestone-0-foundation-design.md)
 - [Milestone 0 implementation plan](docs/superpowers/plans/2026-09-15-milestone-0-foundation.md)
@@ -103,7 +108,6 @@ The deployment workflow supplies the repository base path to Vite. React Router 
 - [Milestone 5 investigation UI design](docs/superpowers/specs/2026-09-28-milestone-5-investigation-ui-design.md)
 - [Milestone 5 implementation plan](docs/superpowers/plans/2026-09-30-milestone-5-investigation-ui.md)
 
-The product design documents define a milestone-based roadmap. Milestone 5
-connects the validated catalogs and deterministic engine to IAM-001 only; later
-milestones add diagnosis, scoring, debrief, persistence, and more playable
-scenarios.
+The product design documents define a milestone-based roadmap. Milestone 6
+connects deterministic diagnosis scoring to IAM-001 only; later milestones add
+remediation, communication, debrief, persistence, and more playable scenarios.

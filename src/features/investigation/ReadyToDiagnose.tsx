@@ -8,18 +8,16 @@ interface ReadyToDiagnoseProps {
   instance: ScenarioInstance
   selectedHypothesisId: string
   bookmarkedEvidenceIds: string[]
-  openedCount: number
-  totalEvidence: number
   onReturn: () => void
+  onSubmit: () => void
 }
 
 export function ReadyToDiagnose({
   instance,
   selectedHypothesisId,
   bookmarkedEvidenceIds,
-  openedCount,
-  totalEvidence,
   onReturn,
+  onSubmit,
 }: ReadyToDiagnoseProps) {
   const heading = useRef<HTMLHeadingElement>(null)
   const hypothesis = instance.scenario.hypotheses.find(
@@ -37,17 +35,14 @@ export function ReadyToDiagnose({
       <h1 id="ready-title" ref={heading} tabIndex={-1}>
         Ready to diagnose
       </h1>
-      <p>Review your selected hypothesis and evidence before the next step.</p>
+      <p>
+        Review your selected hypothesis and bookmarked evidence before
+        submitting.
+      </p>
       <dl>
         <div>
           <dt>Current hypothesis</dt>
           <dd>{hypothesis?.label ?? selectedHypothesisId}</dd>
-        </div>
-        <div>
-          <dt>Progress</dt>
-          <dd>
-            {openedCount} of {totalEvidence} evidence sources opened
-          </dd>
         </div>
       </dl>
       <h2>Bookmarked evidence</h2>
@@ -69,12 +64,21 @@ export function ReadyToDiagnose({
           })}
         </ul>
       )}
-      <p className="ready-checkpoint__boundary">
-        Diagnosis continues in the next product milestone.
-      </p>
-      <Button variant="primary" onClick={onReturn}>
-        Return to investigation
-      </Button>
+      <div className="action-row ready-checkpoint__actions">
+        <Button
+          variant="primary"
+          onClick={onSubmit}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              onSubmit()
+            }
+          }}
+        >
+          Submit diagnosis
+        </Button>
+        <Button onClick={onReturn}>Return to investigation</Button>
+      </div>
     </section>
   )
 }

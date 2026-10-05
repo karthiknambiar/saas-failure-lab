@@ -8,7 +8,7 @@ async function beginIamInvestigation(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: 'Begin investigation' }).click()
 }
 
-test('investigates IAM-001 through the reversible ready checkpoint', async ({
+test('submits an IAM-001 diagnosis from the ready checkpoint', async ({
   page,
 }) => {
   await beginIamInvestigation(page)
@@ -25,9 +25,14 @@ test('investigates IAM-001 through the reversible ready checkpoint', async ({
   await page
     .getByRole('button', { name: /open role audit history.*cost 3/i })
     .click()
-  await page
-    .getByRole('button', { name: 'Bookmark Role audit history' })
-    .click()
+  for (const name of [
+    'Affected user scope',
+    'Authentication events',
+    'Role configuration',
+    'Role audit history',
+  ]) {
+    await page.getByRole('button', { name: `Bookmark ${name}` }).click()
+  }
   await page.getByRole('radio', { name: /recent role change removed/i }).check()
   await page.getByRole('button', { name: 'Ready to diagnose' }).click()
 
@@ -35,22 +40,82 @@ test('investigates IAM-001 through the reversible ready checkpoint', async ({
     page.getByRole('heading', { name: 'Ready to diagnose' }),
   ).toBeFocused()
   await expect(page.getByText('Role audit history')).toBeVisible()
-  await expect(page.getByText('4 of 5 evidence sources opened')).toBeVisible()
-  await expect(
-    page.getByText('Diagnosis continues in the next product milestone.'),
-  ).toBeVisible()
-  await expect(page.getByText(/score|correct answer/i)).toHaveCount(0)
-  await expect(
-    page.getByText(/root cause|critical|supporting|red herring|debrief/i),
-  ).toHaveCount(0)
-  await expect(
-    page.getByRole('button', { name: /submit|diagnose|score/i }),
-  ).toHaveCount(0)
+  const submit = page.getByRole('button', { name: 'Submit diagnosis' })
+  await submit.focus()
+  await submit.press('Enter')
 
-  await page.getByRole('button', { name: 'Return to investigation' }).click()
   await expect(
-    page.getByRole('button', { name: 'Ready to diagnose' }),
+    page.getByRole('heading', { name: 'Diagnosis submitted' }),
   ).toBeFocused()
+  await expect(page.getByText('100', { exact: true })).toBeVisible()
+  await expect(page.getByText('Strong evidence-backed diagnosis')).toBeVisible()
+  await expect(
+    page.getByText(
+      /root cause|critical|supporting|red herring|remediation|communication|debrief/i,
+    ),
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('heading', { name: 'Investigation tools' }),
+  ).toHaveCount(0)
+  await expect(page.getByRole('button')).toHaveCount(1)
+
+  await page.getByRole('button', { name: 'Start over' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Login works, feature does not' }),
+  ).toBeVisible()
+})
+
+test('shows a deterministic partial result for an incorrect IAM-001 diagnosis without exposing an answer key', async ({
+  page,
+}) => {
+  await beginIamInvestigation(page)
+
+  for (const evidence of [
+    ['affected user scope', 1],
+    ['authentication events', 2],
+    ['role configuration', 2],
+    ['role audit history', 3],
+  ] as const) {
+    await page
+      .getByRole('button', {
+        name: new RegExp(`open ${evidence[0]}.*cost ${evidence[1]}`, 'i'),
+      })
+      .click()
+  }
+  for (const name of [
+    'Affected user scope',
+    'Authentication events',
+    'Role configuration',
+    'Role audit history',
+  ]) {
+    await page.getByRole('button', { name: `Bookmark ${name}` }).click()
+  }
+  await page
+    .getByRole('radio', {
+      name: /reporting service is experiencing an outage/i,
+    })
+    .check()
+  await page.getByRole('button', { name: 'Ready to diagnose' }).click()
+  await page.getByRole('button', { name: 'Submit diagnosis' }).press('Enter')
+
+  await expect(
+    page.getByRole('heading', { name: 'Diagnosis submitted' }),
+  ).toBeFocused()
+  await expect(page.getByText('30', { exact: true })).toBeVisible()
+  await expect(page.getByText('Partial diagnosis')).toBeVisible()
+  await expect(
+    page.getByText('The reporting service is experiencing an outage.'),
+  ).toBeVisible()
+  await expect(
+    page.getByText(
+      "A recent role change removed the affected users' reporting authorization.",
+    ),
+  ).toHaveCount(0)
+  await expect(
+    page.getByText(
+      /correct answer|root cause|critical|supporting|red herring|remediation|communication|debrief/i,
+    ),
+  ).toHaveCount(0)
 })
 
 test('enters IAM-001 from the landing CTA and browser card', async ({
@@ -91,6 +156,48 @@ test('loads the static investigation route directly', async ({ page }) => {
   await expect(
     page.getByRole('heading', { name: 'Login works, feature does not' }),
   ).toBeVisible()
+})
+
+test('keeps the completed IAM-001 result narrow and free of workspace tab interactions', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 900 })
+  await beginIamInvestigation(page)
+
+  for (const evidence of [
+    ['affected user scope', 1],
+    ['authentication events', 2],
+    ['role configuration', 2],
+    ['role audit history', 3],
+  ] as const) {
+    await page
+      .getByRole('button', {
+        name: new RegExp(`open ${evidence[0]}.*cost ${evidence[1]}`, 'i'),
+      })
+      .click()
+  }
+  for (const name of [
+    'Affected user scope',
+    'Authentication events',
+    'Role configuration',
+    'Role audit history',
+  ]) {
+    await page.getByRole('button', { name: `Bookmark ${name}` }).click()
+  }
+  await page.getByRole('radio', { name: /recent role change removed/i }).check()
+  await page.getByRole('button', { name: 'Ready to diagnose' }).click()
+  await page.getByRole('button', { name: 'Submit diagnosis' }).press('Enter')
+
+  await expect(
+    page.getByRole('heading', { name: 'Diagnosis submitted' }),
+  ).toBeVisible()
+  await expect(page.getByRole('tablist')).toHaveCount(0)
+  await expect(page.getByRole('tab')).toHaveCount(0)
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true)
 })
 
 for (const width of [320, 820, 821, 865]) {

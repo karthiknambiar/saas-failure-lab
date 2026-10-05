@@ -1032,41 +1032,52 @@ main {
   text-underline-offset: 0.2em;
 }
 
-.ready-checkpoint {
+.ready-checkpoint,
+.diagnosis-result {
   max-width: 52rem;
   padding-block: clamp(3rem, 8vw, 6rem);
 }
 
-.ready-checkpoint h1 {
+.ready-checkpoint h1,
+.diagnosis-result h1 {
   margin-bottom: var(--space-4);
 }
 
-.ready-checkpoint dl {
+.ready-checkpoint dl,
+.diagnosis-result dl {
   display: grid;
   gap: var(--space-3);
   margin-block: var(--space-6);
 }
 
-.ready-checkpoint dl div {
+.ready-checkpoint dl div,
+.diagnosis-result dl div {
   padding: var(--space-4);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-small);
 }
 
-.ready-checkpoint dt {
+.ready-checkpoint dt,
+.diagnosis-result dt {
   color: var(--color-text-muted);
   font-size: 0.8rem;
   text-transform: uppercase;
 }
 
-.ready-checkpoint dd {
+.ready-checkpoint dd,
+.diagnosis-result dd {
   margin: var(--space-2) 0 0;
   font-weight: 750;
 }
 
-.ready-checkpoint__boundary {
+.ready-checkpoint__actions {
+  margin-top: var(--space-6);
+}
+
+.diagnosis-result__outcome {
   margin-block: var(--space-6);
   color: var(--color-text-soft);
+  font-weight: 750;
 }
 
 @media (max-width: 1100px) {
