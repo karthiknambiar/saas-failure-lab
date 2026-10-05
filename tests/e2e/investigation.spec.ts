@@ -40,6 +40,8 @@ test('submits an IAM-001 diagnosis from the ready checkpoint', async ({
     page.getByRole('heading', { name: 'Ready to diagnose' }),
   ).toBeFocused()
   await expect(page.getByText('Role audit history')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Debrief' })).toHaveCount(0)
+  await expect(page.getByText('70 / 70', { exact: true })).toHaveCount(0)
   const submit = page.getByRole('button', { name: 'Submit diagnosis' })
   await submit.focus()
   await submit.press('Enter')
@@ -57,8 +59,60 @@ test('submits an IAM-001 diagnosis from the ready checkpoint', async ({
   await expect(
     page.getByRole('heading', { name: 'Investigation tools' }),
   ).toHaveCount(0)
-  await expect(page.getByRole('button')).toHaveCount(1)
+  await expect(page.getByRole('button')).toHaveCount(2)
 
+  await page.getByRole('button', { name: 'Review debrief' }).click()
+  await expect(page.getByRole('heading', { name: 'Debrief' })).toBeFocused()
+  await expect(page.getByText('100 / 100', { exact: true })).toBeVisible()
+  await expect(page.getByText('70 / 70', { exact: true })).toBeVisible()
+  await expect(page.getByText('30 / 30', { exact: true })).toBeVisible()
+  await expect(
+    page.getByText(
+      /Both users authenticated successfully, but a bulk cleanup removed the role/i,
+    ),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { name: 'Evidence chain' }),
+  ).toBeVisible()
+  const evidenceChainSection = page
+    .getByRole('heading', { name: 'Evidence chain' })
+    .locator('..')
+  const evidenceChain = evidenceChainSection.locator('ol')
+  await expect(evidenceChain).toHaveCount(1)
+  expect(await evidenceChain.evaluate((element) => element.tagName)).toBe('OL')
+  await expect(page.getByText(/browser change is not causal/i)).toBeVisible()
+  await expect(
+    page.getByText(
+      'Forecasting CPU was briefly elevated earlier in the morning.',
+      { exact: true },
+    ),
+  ).toHaveCount(0)
+  await expect(
+    page.getByText(
+      /spike ended before the failure and cannot explain why peers retain access/i,
+    ),
+  ).toHaveCount(0)
+  await expect(
+    page.getByRole('heading', { name: 'Efficient investigation path' }),
+  ).toBeVisible()
+  await expect(
+    page.getByText('Establish impact', { exact: true }),
+  ).toBeVisible()
+  await expect(
+    page.getByText(
+      /A successful login proves authentication, not authorization/i,
+    ),
+  ).toBeVisible()
+  await expect(page.getByRole('tablist')).toHaveCount(0)
+  await expect(
+    page.getByRole('heading', { name: 'Investigation tools' }),
+  ).toHaveCount(0)
+
+  await page.getByRole('button', { name: 'Back to result' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Diagnosis submitted' }),
+  ).toBeFocused()
+  await page.getByRole('button', { name: 'Review debrief' }).click()
   await page.getByRole('button', { name: 'Start over' }).click()
   await expect(
     page.getByRole('heading', { name: 'Login works, feature does not' }),
@@ -191,8 +245,13 @@ test('keeps the completed IAM-001 result narrow and free of workspace tab intera
   await expect(
     page.getByRole('heading', { name: 'Diagnosis submitted' }),
   ).toBeVisible()
+  await page.getByRole('button', { name: 'Review debrief' }).click()
+  await expect(page.getByRole('heading', { name: 'Debrief' })).toBeVisible()
   await expect(page.getByRole('tablist')).toHaveCount(0)
   await expect(page.getByRole('tab')).toHaveCount(0)
+  await expect(
+    page.getByRole('heading', { name: 'Investigation tools' }),
+  ).toHaveCount(0)
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
