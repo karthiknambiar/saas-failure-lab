@@ -20,6 +20,7 @@
 ### Task 1: Pure completed-only debrief selector
 
 **Files:**
+
 - Modify: src/engine/investigation-selectors.ts
 - Modify: src/engine/investigation-selectors.test.ts
 
@@ -27,19 +28,23 @@
 
 Use the existing compose/start/open/bookmark/select/submit helpers. Assert a completed full-score IAM run projects:
 
-~~~ts
+```ts
 expect(getDebriefView(instance, completed)).toEqual({
   submittedDiagnosis: expect.any(String),
   score: { total: 100, diagnosisPoints: 70, evidencePoints: 30 },
   rootCauseExplanation: expect.any(String),
   evidenceChain: expect.arrayContaining([
-    { id: 'service-status', label: 'Service status', explanation: expect.any(String) },
+    {
+      id: 'service-status',
+      label: 'Service status',
+      explanation: expect.any(String),
+    },
   ]),
   redHerrings: expect.any(Array),
   efficientPath: expect.any(Array),
   transferableLesson: expect.any(String),
 })
-~~~
+```
 
 Add test cases for intro/investigating INVALID_STATUS, exact authored evidence-chain ordering, only composition.selectedRedHerringIds, friendly framework-step labels, immutable inputs, and clear ordinary errors for invalid authored evidence/red-herring/path references.
 
@@ -53,7 +58,7 @@ Expected: FAIL because getDebriefView is absent.
 
 Add these exported types:
 
-~~~ts
+```ts
 export interface DebriefEvidenceView {
   id: string
   label: string
@@ -77,11 +82,11 @@ export interface DebriefView {
   efficientPath: DebriefPathEntryView[]
   transferableLesson: string
 }
-~~~
+```
 
 First assert identity, then require completed state plus submission or throw InvestigationTransitionError with INVALID_STATUS. Resolve evidence/red-herring data from the scenario in authored order. Use this exact framework-label map:
 
-~~~ts
+```ts
 const frameworkStepLabels = {
   'establish-impact': 'Establish impact',
   'determine-scope': 'Determine scope',
@@ -89,7 +94,7 @@ const frameworkStepLabels = {
   'collect-evidence': 'Collect evidence',
   'test-hypothesis': 'Test hypothesis',
 } as const
-~~~
+```
 
 Copy only score numbers. Do not expose root-cause ID, relevance, action trail, bookmark IDs, remediation, communication, or complete scenario objects.
 
@@ -101,14 +106,15 @@ Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
-~~~bash
+```bash
 git add src/engine/investigation-selectors.ts src/engine/investigation-selectors.test.ts
 git commit -m "feat(engine): expose completed debrief"
-~~~
+```
 
 ### Task 2: Render semantic debrief
 
 **Files:**
+
 - Create: src/features/investigation/DebriefPage.tsx
 - Create: src/features/investigation/DebriefPage.test.tsx
 - Modify: src/design/global.css
@@ -129,13 +135,13 @@ Expected: FAIL because DebriefPage is absent.
 
 Accept only this prop shape:
 
-~~~ts
+```ts
 {
   debrief: DebriefView
   onBackToResult: () => void
   onStartOver: () => void
 }
-~~~
+```
 
 Focus the heading in useEffect. Use section, dl, ol, and ul structures. Render explanation only from debrief data. Do not import ScenarioInstance, InvestigationState, schema, or hidden selectors. Add scoped debrief styles, text labels for every score component, and responsive wrapping that prevents 320px overflow.
 
@@ -147,14 +153,15 @@ Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
-~~~bash
+```bash
 git add src/features/investigation/DebriefPage.tsx src/features/investigation/DebriefPage.test.tsx src/design/global.css
 git commit -m "feat(ui): render completed debrief"
-~~~
+```
 
 ### Task 3: Result/debrief navigation
 
 **Files:**
+
 - Modify: src/features/investigation/DiagnosisResult.tsx
 - Modify: src/features/investigation/DiagnosisResult.test.tsx
 - Modify: src/features/investigation/InvestigationPage.tsx
@@ -176,9 +183,9 @@ DiagnosisResult gains onReviewDebrief and native secondary Review debrief button
 
 PlayableInvestigation adds page-local state:
 
-~~~ts
+```ts
 const [showDebrief, setShowDebrief] = useState(false)
-~~~
+```
 
 Within the completed branch only, if showDebrief render DebriefPage with getDebriefView(instance, controller.state). Back sets false. Start over sets false then invokes controller.startOver. Otherwise render existing result plus review callback. No route, engine command, persistence, or duplicate completed state.
 
@@ -190,14 +197,15 @@ Expected: PASS.
 
 - [ ] **Step 5: Commit**
 
-~~~bash
+```bash
 git add src/features/investigation/DiagnosisResult.tsx src/features/investigation/DiagnosisResult.test.tsx src/features/investigation/InvestigationPage.tsx src/features/investigation/InvestigationPage.test.tsx
 git commit -m "feat(ui): navigate completed debrief"
-~~~
+```
 
 ### Task 4: E2E, docs, and release gates
 
 **Files:**
+
 - Modify: tests/e2e/investigation.spec.ts
 - Modify: README.md
 - Modify: docs/architecture.md
@@ -219,7 +227,7 @@ Update README, architecture, and scoring docs: explanations plus component score
 
 - [ ] **Step 4: Run release gates**
 
-~~~bash
+```bash
 npm run lint
 npm run format:check
 npm test
@@ -229,16 +237,16 @@ git diff --exit-code
 npm run build
 npx playwright test
 git diff --check
-~~~
+```
 
 Expected: every command exits 0 and generated files have no tracked drift.
 
 - [ ] **Step 5: Commit**
 
-~~~bash
+```bash
 git add tests/e2e/investigation.spec.ts README.md docs/architecture.md docs/scoring.md
 git commit -m "docs: record milestone 7 debrief contract"
-~~~
+```
 
 ## Plan self-review
 
@@ -246,4 +254,3 @@ git commit -m "docs: record milestone 7 debrief contract"
 - Scope: no remediation, communication, efficiency scoring, persistence, routes, backend, authentication, database, or hosted AI.
 - Type consistency: DebriefView is defined before its component/page consumers.
 - Completeness check: each task names files, tests, commands, and commit boundaries.
-

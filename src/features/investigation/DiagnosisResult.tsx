@@ -11,9 +11,11 @@ const outcomeLabels = {
 
 export function DiagnosisResult({
   result,
+  onReviewDebrief,
   onStartOver,
 }: {
   result: DiagnosisResultView
+  onReviewDebrief: () => void
   onStartOver: () => void
 }) {
   const heading = useRef<HTMLHeadingElement>(null)
@@ -42,9 +44,12 @@ export function DiagnosisResult({
       <p className="diagnosis-result__outcome">
         {outcomeLabels[result.outcome]}
       </p>
-      <Button variant="primary" onClick={onStartOver}>
-        Start over
-      </Button>
+      <div className="action-row">
+        <Button onClick={onReviewDebrief}>Review debrief</Button>
+        <Button variant="primary" onClick={onStartOver}>
+          Start over
+        </Button>
+      </div>
     </section>
   )
 }

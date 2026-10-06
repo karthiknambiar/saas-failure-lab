@@ -20,7 +20,8 @@ There is no runtime backend, authentication system, database, remote AI dependen
 
 ## Product boundaries
 
-Milestone 6 implements the IAM-001 investigation and diagnosis result while preserving the
+Milestone 7 implements the IAM-001 investigation, diagnosis result, and
+completed-only debrief while preserving the
 static architecture:
 
 ```text
@@ -32,22 +33,23 @@ React investigation controller
     ↓ safe evidence selectors
 accessible desktop/mobile investigation UI
     ↓ deterministic diagnosis/evidence scoring
-safe completed-result view
+safe completed-result view and completed-only debrief projection
     ↓
 static HTML, CSS, and JavaScript in dist/
 ```
 
 The content pipeline, deterministic composer, investigation engine, accessible
-IAM-001 UI, and deterministic scoring are implemented. Future milestones will
-add remediation, communication, efficiency feedback, detailed breakdowns,
-explanations, debrief, and versioned browser-local progress storage.
+IAM-001 UI, deterministic scoring, and completed-only debrief are implemented.
+Future milestones will add remediation, communication, efficiency feedback, and
+versioned browser-local progress storage.
 
 The boundaries have clear responsibilities:
 
 - **Content:** Contributor-readable scenario definitions outside React.
 - **Validation:** Build/CI-time parsing, Zod validation, semantic checks, and normalization.
 - **Engine:** Pure TypeScript composition, investigation transitions, and deterministic diagnosis/evidence scoring.
-- **Presentation:** Accessible React views that render safe result summaries without embedding answer keys or scoring explanations.
+- **Presentation:** Accessible React views that render safe result summaries and
+  completed-only debrief projections without embedding gameplay rules.
 - **Storage:** Deferred; a future versioned adapter may provide local progress with corruption recovery and migrations.
 
 The routing, presentation, content, validation, composition, investigation, and
@@ -105,7 +107,10 @@ own UI milestone.
 Scenario composition, investigation transitions, and diagnosis scoring are plain
 TypeScript. React consumes safe engine results rather than owning hidden business
 rules. This permits
-deterministic unit tests without rendering UI.
+deterministic unit tests without rendering UI. The completed-only debrief is
+also a pure safe projection: it exposes authored explanations only after the
+engine reaches terminal submission, while active gameplay selectors remain
+answer-safe.
 
 ### Deterministic scenario composition
 
@@ -171,17 +176,17 @@ The deployment workflow builds on GitHub-hosted runners and publishes only `dist
 
 ## Current milestone boundary
 
-Milestone 6 makes IAM-001 playable from the landing page and scenario browser
-through a diagnosis result. The static UI uses the canonical IAM-001 seed,
+Milestone 7 makes IAM-001 playable from the landing page and scenario browser
+through a diagnosis result and a completed-only debrief. The static UI uses the canonical IAM-001 seed,
 engine-controlled evidence gating, safe evidence projections, bookmarks,
 hypothesis selection, an action trail, deterministic 70/30 diagnosis/evidence
 scoring, and a responsive three-region workspace that changes to accessible
-controlled tabs at 820px and below. The result exposes only the learner's
-submitted diagnosis, total score, and broad outcome, never a canonical answer
-or score explanation. FND-001 and every other authored scenario remain
-unavailable for play.
+controlled tabs at 820px and below. The result exposes the learner's submitted
+diagnosis, total score, and broad outcome. After completion, a transient page
+view can replace the result with a safe debrief that explains the completed run
+and displays the diagnosis/evidence score components. FND-001 and every other
+authored scenario remain unavailable for play.
 
-Remediation, communication, efficiency, detailed score breakdowns,
-explanations, debrief, progress persistence, sharing, daily challenges,
+Remediation, communication, efficiency feedback, progress persistence, sharing, daily challenges,
 multi-scenario randomization, and full scenario-browser filtering remain later
 work. No backend state or persistence is part of this milestone.

@@ -19,6 +19,7 @@ describe('DiagnosisResult', () => {
             total: 72,
             outcome,
           }}
+          onReviewDebrief={vi.fn()}
           onStartOver={vi.fn()}
         />,
       )
@@ -32,7 +33,7 @@ describe('DiagnosisResult', () => {
       expect(screen.getByText('72')).toBeVisible()
       expect(screen.getByText(label)).toBeVisible()
       expect(document.body).not.toHaveTextContent(
-        /role-change|threshold|breakdown|correct answer|root cause|critical|supporting|red herring|remediation|communication|debrief/i,
+        /role-change|threshold|breakdown|correct answer|root cause|critical|supporting|red herring|remediation|communication/i,
       )
     },
   )
@@ -47,11 +48,34 @@ describe('DiagnosisResult', () => {
           total: 72,
           outcome: 'strong',
         }}
+        onReviewDebrief={vi.fn()}
         onStartOver={onStartOver}
       />,
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Start over' }))
     expect(onStartOver).toHaveBeenCalledOnce()
+  })
+
+  it('offers a review-debrief action', () => {
+    const onReviewDebrief = vi.fn()
+    render(
+      <DiagnosisResult
+        result={{
+          selectedHypothesisId: 'role-change',
+          selectedHypothesisLabel: 'A recent role change removed access',
+          total: 72,
+          outcome: 'strong',
+        }}
+        onReviewDebrief={onReviewDebrief}
+        onStartOver={vi.fn()}
+      />,
+    )
+
+    const review = screen.getByRole('button', { name: 'Review debrief' })
+    review.focus()
+    fireEvent.click(review)
+
+    expect(onReviewDebrief).toHaveBeenCalledOnce()
   })
 })

@@ -85,7 +85,7 @@ describe('InvestigationPage', () => {
     ).toBeInTheDocument()
   })
 
-  it('submits a selected diagnosis and starts over from the submitted result', () => {
+  it('navigates between a submitted result and its debrief, then starts a fresh run', () => {
     renderInvestigation('/scenarios/iam-001')
     fireEvent.click(screen.getByRole('button', { name: 'Begin investigation' }))
     fireEvent.click(
@@ -121,16 +121,69 @@ describe('InvestigationPage', () => {
     expect(
       screen.queryByRole('button', { name: 'Ready to diagnose' }),
     ).not.toBeInTheDocument()
-    expect(screen.queryAllByRole('button')).toHaveLength(1)
+    expect(screen.queryAllByRole('button')).toHaveLength(2)
     expect(screen.queryAllByRole('radio')).toHaveLength(0)
     expect(document.body).not.toHaveTextContent(
-      /root cause|critical|supporting|red herring|remediation|communication|debrief/i,
+      /root cause|critical|supporting|red herring|remediation|communication/i,
     )
 
+    const review = screen.getByRole('button', { name: 'Review debrief' })
+    review.focus()
+    fireEvent.click(review)
+
+    expect(screen.getByRole('heading', { name: 'Debrief' })).toHaveFocus()
+    expect(
+      screen.queryByRole('heading', { name: 'Diagnosis submitted' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Investigation tools' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Ready to diagnose' }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to result' }))
+    expect(
+      screen.getByRole('heading', { name: 'Diagnosis submitted' }),
+    ).toHaveFocus()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review debrief' }))
     fireEvent.click(screen.getByRole('button', { name: 'Start over' }))
     expect(
       screen.getByRole('heading', { name: 'Login works, feature does not' }),
     ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Debrief' }),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Begin investigation' }))
+    fireEvent.click(
+      screen.getByRole('radio', {
+        name: /reporting service is experiencing an outage/i,
+      }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Ready to diagnose' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Submit diagnosis' }))
+
+    expect(
+      screen.getByText('The reporting service is experiencing an outage.'),
+    ).toBeVisible()
+    expect(
+      screen.queryByText(
+        "A recent role change removed the affected users' reporting authorization.",
+      ),
+    ).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review debrief' }))
+    expect(screen.getByRole('heading', { name: 'Debrief' })).toHaveFocus()
+    expect(
+      screen.getByText('The reporting service is experiencing an outage.'),
+    ).toBeVisible()
+    expect(
+      screen.queryByText(
+        "A recent role change removed the affected users' reporting authorization.",
+      ),
+    ).not.toBeInTheDocument()
   })
 })
 
