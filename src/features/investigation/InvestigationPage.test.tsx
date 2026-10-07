@@ -3,9 +3,56 @@ import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
 import { loadInvestigationScenario } from './load-investigation'
-import { InvestigationPage } from './InvestigationPage'
+import { InvestigationPage, PlayableInvestigation } from './InvestigationPage'
 import { IncidentIntro } from './IncidentIntro'
 import { evidenceLabel, sentenceCase } from './investigation-labels'
+import type { StorageLike } from '../../progress/browser-progress-storage'
+import { PROGRESS_STORAGE_KEY } from '../../progress/browser-progress-storage'
+
+class MemoryStorage implements StorageLike {
+  readonly values = new Map<string, string>()
+  setCalls = 0
+
+  getItem(key: string) {
+    return this.values.get(key) ?? null
+  }
+
+  setItem(key: string, value: string) {
+    this.setCalls += 1
+    this.values.set(key, value)
+  }
+
+  removeItem(key: string) {
+    this.values.delete(key)
+  }
+}
+
+function iamInstance() {
+  const loaded = loadInvestigationScenario('iam-001')
+  if (!loaded.available) throw new Error('Expected IAM-001 to be available')
+  return loaded.instance
+}
+
+function renderPlayable(storage: StorageLike, now = () => 1_700_000_000_000) {
+  return render(
+    <PlayableInvestigation
+      instance={iamInstance()}
+      storage={storage}
+      now={now}
+    />,
+  )
+}
+
+function submitIamDiagnosis() {
+  fireEvent.click(screen.getByRole('button', { name: 'Begin investigation' }))
+  fireEvent.click(
+    screen.getByRole('radio', {
+      name: /recent role change removed the affected users/i,
+    }),
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Ready to diagnose' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Submit diagnosis' }))
+}
 
 function renderInvestigation(path: string) {
   return render(
@@ -34,6 +81,99 @@ function RouteSwitcher() {
 }
 
 describe('InvestigationPage', () => {
+  it('persists the terminal IAM diagnosis exactly once across result navigation and rerenders', () => {
+    const storage = new MemoryStorage()
+    const view = renderPlayable(storage)
+
+    submitIamDiagnosis()
+
+    expect(JSON.parse(storage.getItem(PROGRESS_STORAGE_KEY) ?? '')).toEqual({
+      version: 1,
+      completedRuns: [
+        {
+          scenarioId: 'iam-001',
+          completedAt: 1_700_000_000_000,
+          submittedHypothesisId: 'reporting-role-removed',
+          score: { total: 70, diagnosisPoints: 70, evidencePoints: 0 },
+        },
+      ],
+    })
+    expect(storage.setCalls).toBe(1)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review debrief' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Back to result' }))
+    view.rerender(
+      <PlayableInvestigation
+        instance={iamInstance()}
+        storage={storage}
+        now={() => 1_700_000_000_000}
+      />,
+    )
+
+    expect(storage.setCalls).toBe(1)
+  })
+
+  it('does not save unfinished work or duplicate a saved completion on start over', () => {
+    const storage = new MemoryStorage()
+    renderPlayable(storage)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Begin investigation' }))
+    expect(storage.setCalls).toBe(0)
+    expect(
+      screen.queryByRole('button', { name: 'Submit diagnosis' }),
+    ).toBeNull()
+
+    fireEvent.click(
+      screen.getByRole('radio', {
+        name: /recent role change removed the affected users/i,
+      }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Ready to diagnose' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Submit diagnosis' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Start over' }))
+
+    expect(storage.setCalls).toBe(1)
+  })
+
+  it('resets a completed run when the playable scenario changes', () => {
+    const storage = new MemoryStorage()
+    const view = renderPlayable(storage)
+
+    submitIamDiagnosis()
+    const nextInstance = structuredClone(iamInstance())
+    nextInstance.scenario.id = 'another-scenario'
+
+    view.rerender(
+      <PlayableInvestigation
+        instance={nextInstance}
+        storage={storage}
+        now={() => 1_700_000_000_001}
+      />,
+    )
+
+    expect(
+      screen.getByRole('button', { name: 'Begin investigation' }),
+    ).toBeVisible()
+    expect(storage.setCalls).toBe(1)
+  })
+
+  it('keeps the completed result visible when progress saving fails', () => {
+    const storage: StorageLike = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('storage blocked')
+      },
+      removeItem: () => undefined,
+    }
+
+    renderPlayable(storage)
+    submitIamDiagnosis()
+
+    expect(
+      screen.getByRole('heading', { name: 'Diagnosis submitted' }),
+    ).toBeVisible()
+  })
+
   it('introduces IAM-001 with only safe incident information and begins work', () => {
     renderInvestigation('/scenarios/iam-001')
 

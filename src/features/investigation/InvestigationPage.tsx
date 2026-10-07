@@ -7,6 +7,12 @@ import {
   getDiagnosisResultView,
 } from '../../engine/investigation-selectors'
 import type { ScenarioInstance } from '../../engine/scenario-instance'
+import {
+  loadBrowserProgress,
+  saveBrowserProgress,
+  type StorageLike,
+} from '../../progress/browser-progress-storage'
+import { recordCompletedRun } from '../../progress/progress-model'
 import { IncidentIntro } from './IncidentIntro'
 import { DebriefPage } from './DebriefPage'
 import { DiagnosisResult } from './DiagnosisResult'
@@ -47,12 +53,66 @@ export function InvestigationPage() {
   return <PlayableInvestigation instance={loadedScenario.instance} />
 }
 
-function PlayableInvestigation({ instance }: { instance: ScenarioInstance }) {
-  const [startedAt] = useState(Date.now)
+interface PlayableInvestigationProps {
+  instance: ScenarioInstance
+  storage?: StorageLike
+  now?: () => number
+}
+
+export function PlayableInvestigation({
+  instance,
+  storage,
+  now,
+}: PlayableInvestigationProps) {
+  return (
+    <PlayableInvestigationRun
+      key={instance.scenario.id}
+      instance={instance}
+      storage={storage}
+      now={now}
+    />
+  )
+}
+
+function PlayableInvestigationRun({
+  instance,
+  storage,
+  now = Date.now,
+}: PlayableInvestigationProps) {
+  const [startedAt] = useState(now)
   const [showDebrief, setShowDebrief] = useState(false)
   const readyButtonRef = useRef<HTMLButtonElement>(null)
   const restoreReadyFocus = useRef(false)
+  const pendingCompletionAt = useRef<number | undefined>(undefined)
+  const persistedCompletionKey = useRef<string | undefined>(undefined)
   const controller = useInvestigationController(instance, startedAt)
+
+  useEffect(() => {
+    const completedAt = pendingCompletionAt.current
+    const submission = controller.state.submission
+    if (
+      controller.state.status !== 'completed' ||
+      !submission ||
+      completedAt === undefined
+    ) {
+      return
+    }
+
+    const completionKey = `${instance.scenario.id}:${completedAt}`
+    if (persistedCompletionKey.current === completionKey) return
+    persistedCompletionKey.current = completionKey
+
+    const progress = loadBrowserProgress(storage).progress
+    saveBrowserProgress(
+      recordCompletedRun(progress, {
+        scenarioId: instance.scenario.id,
+        completedAt,
+        submittedHypothesisId: submission.selectedHypothesisId,
+        score: submission.score,
+      }),
+      storage,
+    )
+  }, [controller.state, instance.scenario.id, storage])
 
   useEffect(() => {
     if (!controller.ready && restoreReadyFocus.current) {
@@ -63,7 +123,15 @@ function PlayableInvestigation({ instance }: { instance: ScenarioInstance }) {
 
   const startOver = () => {
     setShowDebrief(false)
+    pendingCompletionAt.current = undefined
+    persistedCompletionKey.current = undefined
     controller.startOver()
+  }
+
+  const submitDiagnosis = () => {
+    const accepted = controller.submitDiagnosis()
+    if (accepted) pendingCompletionAt.current = now()
+    return accepted
   }
 
   if (controller.state.status === 'intro') {
@@ -100,7 +168,7 @@ function PlayableInvestigation({ instance }: { instance: ScenarioInstance }) {
           restoreReadyFocus.current = true
           controller.setReady(false)
         }}
-        onSubmit={controller.submitDiagnosis}
+        onSubmit={submitDiagnosis}
       />
     )
   }

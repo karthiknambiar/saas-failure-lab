@@ -20,8 +20,8 @@ There is no runtime backend, authentication system, database, remote AI dependen
 
 ## Product boundaries
 
-Milestone 7 implements the IAM-001 investigation, diagnosis result, and
-completed-only debrief while preserving the
+Milestone 8 implements the IAM-001 investigation, diagnosis result,
+completed-only debrief, and browser-local completed-run progress while preserving the
 static architecture:
 
 ```text
@@ -34,14 +34,15 @@ React investigation controller
 accessible desktop/mobile investigation UI
     ↓ deterministic diagnosis/evidence scoring
 safe completed-result view and completed-only debrief projection
+    ↓ versioned browser-local completed-run storage
     ↓
 static HTML, CSS, and JavaScript in dist/
 ```
 
 The content pipeline, deterministic composer, investigation engine, accessible
-IAM-001 UI, deterministic scoring, and completed-only debrief are implemented.
-Future milestones will add remediation, communication, efficiency feedback, and
-versioned browser-local progress storage.
+IAM-001 UI, deterministic scoring, completed-only debrief, and versioned
+browser-local completed-run progress are implemented. Future milestones will
+add remediation, communication, and efficiency feedback.
 
 The boundaries have clear responsibilities:
 
@@ -50,11 +51,14 @@ The boundaries have clear responsibilities:
 - **Engine:** Pure TypeScript composition, investigation transitions, and deterministic diagnosis/evidence scoring.
 - **Presentation:** Accessible React views that render safe result summaries and
   completed-only debrief projections without embedding gameplay rules.
-- **Storage:** Deferred; a future versioned adapter may provide local progress with corruption recovery and migrations.
+- **Storage:** A versioned browser-local adapter owns completed-run encoding,
+  loading, saving, and reset. Malformed or unknown saved values recover safely
+  to empty progress; storage failures remain non-blocking.
 
-The routing, presentation, content, validation, composition, investigation, and
-scoring boundaries now exist. Storage remains a planned boundary rather than an
-empty speculative interface.
+The routing, presentation, content, validation, composition, investigation,
+scoring, and storage boundaries now exist. Storage remains deliberately narrow:
+it records completed runs only and has no account, backend, or synchronization
+responsibility.
 
 ## Architecture decisions
 
@@ -76,8 +80,8 @@ The build copies `dist/index.html` to `dist/404.html`. GitHub Pages can therefor
 
 React, React DOM, and React Router are the browser runtime packages. Zod and the
 YAML parser support the build-time content pipeline; scenario YAML is not parsed
-in the browser. State management and persistence libraries will be added only
-when their milestone requires them.
+in the browser. The completed-run storage adapter uses browser APIs directly;
+no state-management or persistence library is required.
 
 ### Generated playable catalog
 
@@ -89,9 +93,11 @@ through active-investigation selectors.
 
 ### Feature-local investigation controller
 
-React owns only transient selection, tab, error, and ready-checkpoint state.
+React owns transient selection, tab, error, and ready-checkpoint state.
 Investigation facts remain in the framework-independent engine. IAM-001 uses a
-canonical seed, refresh starts a new session, and no state is persisted.
+canonical seed, refresh starts a new session, and in-progress runs are never
+persisted or resumed. An accepted terminal diagnosis records only its completed
+run in browser-local progress.
 
 ### Presentation ownership
 
@@ -176,7 +182,7 @@ The deployment workflow builds on GitHub-hosted runners and publishes only `dist
 
 ## Current milestone boundary
 
-Milestone 7 makes IAM-001 playable from the landing page and scenario browser
+Milestone 8 makes IAM-001 playable from the landing page and scenario browser
 through a diagnosis result and a completed-only debrief. The static UI uses the canonical IAM-001 seed,
 engine-controlled evidence gating, safe evidence projections, bookmarks,
 hypothesis selection, an action trail, deterministic 70/30 diagnosis/evidence
@@ -184,9 +190,15 @@ scoring, and a responsive three-region workspace that changes to accessible
 controlled tabs at 820px and below. The result exposes the learner's submitted
 diagnosis, total score, and broad outcome. After completion, a transient page
 view can replace the result with a safe debrief that explains the completed run
-and displays the diagnosis/evidence score components. FND-001 and every other
-authored scenario remain unavailable for play.
+and displays the diagnosis/evidence score components. Accepted completed runs
+are stored in a versioned browser-local record and feed the Progress dashboard,
+where they survive reloads and can be reset after confirmation. Invalid or
+unknown stored values recover to an empty dashboard without crashing. This does
+not add accounts, a backend, synchronization, active-run resume, export, or
+import; static deployment remains unchanged. FND-001 and every other authored
+scenario remain unavailable for play.
 
-Remediation, communication, efficiency feedback, progress persistence, sharing, daily challenges,
-multi-scenario randomization, and full scenario-browser filtering remain later
-work. No backend state or persistence is part of this milestone.
+Remediation, communication, efficiency feedback, export/import, sharing, daily
+challenges, multi-scenario randomization, and full scenario-browser filtering
+remain later work. No backend state or synchronized persistence is part of this
+milestone.

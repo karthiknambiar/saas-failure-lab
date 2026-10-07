@@ -2,13 +2,13 @@
 
 SaaS Failure Lab is a free, open-source troubleshooting simulator for people who work between customers and engineering. It will teach evidence-driven investigation across APIs, identity, integrations, data flows, and browser behavior without requiring access to a real production environment.
 
-> Current status: Milestone 7 — IAM-001 completed-run debrief
+> Current status: Milestone 8 — browser-local completed-run progress
 
 The repository includes two fictional YAML scenarios, a validated content
 contract, and deterministic generated browse and playable catalogs. IAM-001 is
 playable from the landing page or scenario browser through a completed-run
-debrief. IAM-001 scoring is deterministic and kept in browser memory only.
-FND-001 remains authored but unavailable for play.
+debrief. Accepted IAM-001 completions are saved as versioned, browser-local
+progress records; FND-001 remains authored but unavailable for play.
 
 ## Product constraints
 
@@ -16,7 +16,9 @@ FND-001 remains authored but unavailable for play.
 - Scenario content will remain separate from React components
 - Authoritative scenario and scoring behavior will be deterministic
 - Engine behavior will be independently testable where practical
-- IAM-001 uses local in-memory state only; no progress or results are persisted
+- Completed runs use versioned browser-local storage; malformed or unknown
+  saved data safely recovers to an empty progress view
+- No accounts, backend, sync, active-run resume, export, or import
 - Accessibility is a functional requirement
 
 ## Local development
@@ -72,6 +74,7 @@ The current application routes are:
 - `/` — product landing page
 - `/scenarios` — browse-safe scenario library with the IAM-001 entry
 - `/scenarios/iam-001` — playable canonical IAM investigation
+- `/progress` — completed-run dashboard, achievements, and local reset flow
 - `/how-it-works` — investigation-loop explanation
 - any unknown path — not-found recovery page
 
@@ -80,8 +83,10 @@ points for the submitted diagnosis and 30 for bookmarked evidence. Only after a
 completed submission, a learner can replace the result view with a debrief that
 shows the diagnosis and evidence score components, the authored root-cause
 explanation, evidence chain, seed-selected red herrings, efficient path, and
-transferable lesson. Remediation, communication, efficiency scoring,
-persistence, sharing, and multi-scenario play remain deferred.
+transferable lesson. Completed-run progress is stored only in the current
+browser and can be reset from the Progress dashboard. Active investigations are
+not resumed; export/import, sharing, remediation, communication, efficiency
+scoring, and multi-scenario play remain deferred.
 
 The deployment workflow supplies the repository base path to Vite. React Router uses that compiled base path, preserving clean navigation when the site is deployed below a domain root.
 
@@ -109,7 +114,7 @@ The deployment workflow supplies the repository base path to Vite. React Router 
 - [Milestone 5 investigation UI design](docs/superpowers/specs/2026-09-28-milestone-5-investigation-ui-design.md)
 - [Milestone 5 implementation plan](docs/superpowers/plans/2026-09-30-milestone-5-investigation-ui.md)
 
-The product design documents define a milestone-based roadmap. Milestone 7
-adds a completed-only debrief to deterministic IAM-001 diagnosis scoring; later
-milestones add remediation, communication, persistence, and more playable
-scenarios.
+The product design documents define a milestone-based roadmap. Milestone 8 adds
+completed-only, browser-local progress records to deterministic IAM-001
+diagnosis scoring; later milestones add remediation, communication, and more
+playable scenarios.
