@@ -17,6 +17,7 @@ describe('application routes', () => {
     ['/', 'Practice the investigation before it is urgent.'],
     ['/scenarios', 'Browse troubleshooting scenarios'],
     ['/scenarios/iam-001', 'Login works, feature does not'],
+    ['/progress', 'Your progress'],
     ['/how-it-works', 'How an investigation works'],
   ])('renders %s', (path, heading) => {
     renderRoute(path)
@@ -31,6 +32,14 @@ describe('application routes', () => {
 
     expect(
       screen.getAllByRole('link', { name: 'Scenarios' })[0],
+    ).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('marks Progress as the current navigation item', () => {
+    renderRoute('/progress')
+
+    expect(
+      screen.getAllByRole('link', { name: 'Progress' })[0],
     ).toHaveAttribute('aria-current', 'page')
   })
 
