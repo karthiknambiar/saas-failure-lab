@@ -163,11 +163,13 @@ function PlayableInvestigationRun({
 
   if (controller.state.status === 'completed') {
     const debrief = getDebriefView(instance, controller.state)
-    const shareChallengePayload = createShareChallengePayload(
-      instance,
-      debrief,
-      import.meta.env.BASE_URL,
-    )
+    const shareChallengePayload =
+      typeof window === 'undefined'
+        ? undefined
+        : createShareChallengePayload(instance, debrief, {
+            origin: window.location.origin,
+            baseUrl: import.meta.env.BASE_URL,
+          })
 
     if (showDebrief) {
       return (

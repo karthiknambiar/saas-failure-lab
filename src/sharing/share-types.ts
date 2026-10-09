@@ -22,3 +22,11 @@ export interface ChallengeLinkInput {
   scenarioId: string
   seed: string
 }
+
+export interface ChallengeUrlLocation {
+  origin: string
+  baseUrl: string
+}
+
+export interface ChallengeUrlInput
+  extends ChallengeLinkInput, ChallengeUrlLocation {}

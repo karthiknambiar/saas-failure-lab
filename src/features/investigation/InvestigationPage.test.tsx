@@ -135,10 +135,11 @@ describe('InvestigationPage', () => {
     expect(storage.setCalls).toBe(1)
   })
 
-  it('creates a shareable completed challenge only after submission and clears it on start over', async () => {
+  it('shares and copies an absolute completed challenge URL only after submission', async () => {
     const storage = new MemoryStorage()
     const share = vi.fn().mockResolvedValue(undefined)
-    vi.stubGlobal('navigator', { share })
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { share, clipboard: { writeText } })
     renderPlayable(storage)
 
     expect(
@@ -155,12 +156,19 @@ describe('InvestigationPage', () => {
       expect(share).toHaveBeenCalledWith(
         expect.objectContaining({
           title: 'Login works, feature does not',
-          url: '/scenarios/iam-001?seed=iam-001%3Av1%3Acanonical',
+          url: `${window.location.origin}/scenarios/iam-001?seed=iam-001%3Av1%3Acanonical`,
         }),
       ),
     )
     expect(JSON.stringify(share.mock.calls[0][0])).not.toMatch(
       /rootCause|evidenceChain|debrief|relevance|actions|bookmark|remediation|communication/i,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy challenge link' }))
+    await waitFor(() =>
+      expect(writeText).toHaveBeenCalledWith(
+        `${window.location.origin}/scenarios/iam-001?seed=iam-001%3Av1%3Acanonical`,
+      ),
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Review debrief' }))

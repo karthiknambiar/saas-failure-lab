@@ -2,6 +2,8 @@ import type { ScenarioInstance } from '../engine/scenario-instance'
 import { InvalidSeedError, normalizeSeed } from '../engine/seed'
 import type {
   ChallengeLinkInput,
+  ChallengeUrlLocation,
+  ChallengeUrlInput,
   CompletedShareSource,
   ShareChallengePayload,
 } from './share-types'
@@ -19,6 +21,18 @@ export function buildChallengeLink({
   const query = new URLSearchParams({ seed: normalizedSeed })
 
   return `${normalizedBase}scenarios/${encodeURIComponent(scenarioId)}?${query}`
+}
+
+export function buildChallengeUrl({
+  origin,
+  baseUrl,
+  scenarioId,
+  seed,
+}: ChallengeUrlInput): string {
+  return new URL(
+    buildChallengeLink({ baseUrl, scenarioId, seed }),
+    origin,
+  ).toString()
 }
 
 export function parseChallengeSeed(raw: string | null): ParsedChallengeSeed {
@@ -40,7 +54,7 @@ export function parseChallengeSeed(raw: string | null): ParsedChallengeSeed {
 export function createShareChallengePayload(
   instance: ScenarioInstance,
   completed: CompletedShareSource,
-  baseUrl: string,
+  location: ChallengeUrlLocation,
 ): ShareChallengePayload {
   const scenarioId = instance.scenario.id
   const seed = normalizeSeed(instance.composition.seed)
@@ -55,6 +69,6 @@ export function createShareChallengePayload(
       diagnosisPoints: completed.score.diagnosisPoints,
       evidencePoints: completed.score.evidencePoints,
     },
-    challengeUrl: buildChallengeLink({ baseUrl, scenarioId, seed }),
+    challengeUrl: buildChallengeUrl({ ...location, scenarioId, seed }),
   }
 }

@@ -69,7 +69,7 @@ describe('createShareChallengePayload', () => {
         {
           score: { total: 9, diagnosisPoints: 4, evidencePoints: 5 },
         },
-        '/failure-lab/',
+        { origin: 'https://example.test', baseUrl: '/failure-lab/' },
       ),
     ).toEqual({
       scenarioId: 'incident / one',
@@ -78,7 +78,7 @@ describe('createShareChallengePayload', () => {
       title: 'A public incident',
       score: { total: 9, diagnosisPoints: 4, evidencePoints: 5 },
       challengeUrl:
-        '/failure-lab/scenarios/incident%20%2F%20one?seed=caf%C3%A9+%F0%9F%98%80',
+        'https://example.test/failure-lab/scenarios/incident%20%2F%20one?seed=caf%C3%A9+%F0%9F%98%80',
     })
   })
 
@@ -86,9 +86,15 @@ describe('createShareChallengePayload', () => {
     const completed = {
       score: { total: 9, diagnosisPoints: 4, evidencePoints: 5 },
     }
-    const payload = createShareChallengePayload(instance, completed, '/')
+    const payload = createShareChallengePayload(instance, completed, {
+      origin: 'https://example.test',
+      baseUrl: '/',
+    })
     payload.score.total = 0
 
+    expect(payload.challengeUrl).toBe(
+      'https://example.test/scenarios/incident%20%2F%20one?seed=caf%C3%A9+%F0%9F%98%80',
+    )
     expect(completed.score.total).toBe(9)
     completed.score.evidencePoints = 0
     expect(payload.score.evidencePoints).toBe(5)
