@@ -2,7 +2,23 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import type { DebriefView } from '../../engine/investigation-selectors'
+import type { ShareChallengePayload } from '../../sharing/share-types'
 import { DebriefPage } from './DebriefPage'
+
+const shareChallenge: ShareChallengePayload = {
+  scenarioId: 'iam-001',
+  scenarioVersion: 1,
+  seed: 'seed-123',
+  title: 'Login works, feature does not',
+  score: { total: 100, diagnosisPoints: 70, evidencePoints: 30 },
+  challengeUrl: '/scenarios/iam-001?seed=seed-123',
+}
+
+const shareActions = {
+  share: vi.fn().mockResolvedValue({ ok: true }),
+  copy: vi.fn().mockResolvedValue({ ok: true }),
+  download: vi.fn().mockResolvedValue({ ok: true }),
+}
 
 const debrief: DebriefView = {
   submittedDiagnosis: 'A recent role change removed access',
@@ -122,5 +138,28 @@ describe('DebriefPage', () => {
       screen.getByText('No red herrings were selected for this incident.'),
     ).toBeVisible()
     expect(within(redHerringsSection).queryByRole('list')).toBeNull()
+  })
+
+  it('integrates the safe completed challenge sharing panel', () => {
+    render(
+      <DebriefPage
+        debrief={debrief}
+        shareChallenge={shareChallenge}
+        shareActions={shareActions}
+        onBackToResult={vi.fn()}
+        onStartOver={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByRole('heading', { name: 'Share this challenge' }),
+    ).toBeVisible()
+    expect(
+      within(
+        screen
+          .getByRole('heading', { name: 'Share this challenge' })
+          .closest('section')!,
+      ).getByText('100 / 100'),
+    ).toBeVisible()
   })
 })

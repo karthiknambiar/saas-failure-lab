@@ -1,6 +1,6 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useNavigate } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import { loadInvestigationScenario } from './load-investigation'
 import { InvestigationPage, PlayableInvestigation } from './InvestigationPage'
@@ -135,6 +135,48 @@ describe('InvestigationPage', () => {
     expect(storage.setCalls).toBe(1)
   })
 
+  it('creates a shareable completed challenge only after submission and clears it on start over', async () => {
+    const storage = new MemoryStorage()
+    const share = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { share })
+    renderPlayable(storage)
+
+    expect(
+      screen.queryByRole('heading', { name: 'Share this challenge' }),
+    ).not.toBeInTheDocument()
+
+    submitIamDiagnosis()
+
+    expect(
+      screen.getByRole('heading', { name: 'Share this challenge' }),
+    ).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Share challenge' }))
+    await waitFor(() =>
+      expect(share).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Login works, feature does not',
+          url: '/scenarios/iam-001?seed=iam-001%3Av1%3Acanonical',
+        }),
+      ),
+    )
+    expect(JSON.stringify(share.mock.calls[0][0])).not.toMatch(
+      /rootCause|evidenceChain|debrief|relevance|actions|bookmark|remediation|communication/i,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Review debrief' }))
+    expect(
+      screen.getByRole('heading', { name: 'Share this challenge' }),
+    ).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Share challenge' }))
+    await waitFor(() => expect(share).toHaveBeenCalledTimes(2))
+    expect(share.mock.calls[1][0]?.url).toBe(share.mock.calls[0][0]?.url)
+    fireEvent.click(screen.getByRole('button', { name: 'Start over' }))
+    expect(
+      screen.queryByRole('heading', { name: 'Share this challenge' }),
+    ).not.toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
   it('resets a completed run when the playable scenario changes', () => {
     const storage = new MemoryStorage()
     const view = renderPlayable(storage)
@@ -209,6 +251,9 @@ describe('InvestigationPage', () => {
     expect(
       screen.getByRole('link', { name: 'Browse scenarios' }),
     ).toHaveAttribute('href', '/scenarios')
+    expect(
+      screen.queryByRole('heading', { name: 'Share this challenge' }),
+    ).not.toBeInTheDocument()
   })
 
   it('recovers an invalid seeded challenge link without retaining its seed', () => {
@@ -220,6 +265,9 @@ describe('InvestigationPage', () => {
     expect(
       screen.getByRole('link', { name: 'Browse scenarios' }),
     ).toHaveAttribute('href', '/scenarios')
+    expect(
+      screen.queryByRole('heading', { name: 'Share this challenge' }),
+    ).not.toBeInTheDocument()
   })
 
   it('can navigate from an unavailable scenario to IAM-001', () => {
@@ -272,7 +320,7 @@ describe('InvestigationPage', () => {
     expect(
       screen.queryByRole('button', { name: 'Ready to diagnose' }),
     ).not.toBeInTheDocument()
-    expect(screen.queryAllByRole('button')).toHaveLength(2)
+    expect(screen.queryAllByRole('button')).toHaveLength(5)
     expect(screen.queryAllByRole('radio')).toHaveLength(0)
     expect(document.body).not.toHaveTextContent(
       /root cause|critical|supporting|red herring|remediation|communication/i,

@@ -2,15 +2,24 @@ import { useEffect, useRef } from 'react'
 
 import { Button } from '../../components/Button'
 import type { DebriefView } from '../../engine/investigation-selectors'
+import type { ShareChallengePayload } from '../../sharing/share-types'
+import {
+  ShareChallengePanel,
+  type ShareChallengeActions,
+} from '../sharing/ShareChallengePanel'
 
 interface DebriefPageProps {
   debrief: DebriefView
+  shareChallenge?: ShareChallengePayload
+  shareActions?: ShareChallengeActions
   onBackToResult: () => void
   onStartOver: () => void
 }
 
 export function DebriefPage({
   debrief,
+  shareChallenge,
+  shareActions,
   onBackToResult,
   onStartOver,
 }: DebriefPageProps) {
@@ -96,6 +105,10 @@ export function DebriefPage({
         <h2 id="transferable-lesson-title">Transferable lesson</h2>
         <p>{debrief.transferableLesson}</p>
       </section>
+
+      {shareChallenge && shareActions ? (
+        <ShareChallengePanel payload={shareChallenge} actions={shareActions} />
+      ) : null}
 
       <div className="action-row">
         <Button onClick={onBackToResult}>Back to result</Button>
