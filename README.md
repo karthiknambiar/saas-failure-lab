@@ -2,7 +2,7 @@
 
 SaaS Failure Lab is a free, open-source troubleshooting simulator for people who work between customers and engineering. It will teach evidence-driven investigation across APIs, identity, integrations, data flows, and browser behavior without requiring access to a real production environment.
 
-> Current status: Milestone 8 — browser-local completed-run progress
+> Current status: Milestone 9 — browser-local completed-run sharing and daily incidents
 
 The repository includes two fictional YAML scenarios, a validated content
 contract, and deterministic generated browse and playable catalogs. IAM-001 is
@@ -19,6 +19,10 @@ progress records; FND-001 remains authored but unavailable for play.
 - Completed runs use versioned browser-local storage; malformed or unknown
   saved data safely recovers to an empty progress view
 - No accounts, backend, sync, active-run resume, export, or import
+- Sharing begins only after completion and creates a browser-local seeded link
+  for the same scenario variation; it never includes a solution or debrief data
+- Daily incidents are selected deterministically from the UTC calendar date
+- No analytics, tracking, social API, or server-side share-card generation
 - Accessibility is a functional requirement
 
 ## Local development
@@ -76,9 +80,10 @@ The current application routes are:
 - `/scenarios/iam-001` — playable canonical IAM investigation
 - `/progress` — completed-run dashboard, achievements, and local reset flow
 - `/how-it-works` — investigation-loop explanation
+- `/daily` — UTC-selected daily incident with a seeded challenge link
 - any unknown path — not-found recovery page
 
-Milestone 7 retains deterministic diagnosis submission and the 70/30 score: 70
+Milestone 9 retains deterministic diagnosis submission and the 70/30 score: 70
 points for the submitted diagnosis and 30 for bookmarked evidence. Only after a
 completed submission, a learner can replace the result view with a debrief that
 shows the diagnosis and evidence score components, the authored root-cause
@@ -86,7 +91,13 @@ explanation, evidence chain, seed-selected red herrings, efficient path, and
 transferable lesson. Completed-run progress is stored only in the current
 browser and can be reset from the Progress dashboard. Active investigations are
 not resumed; export/import, sharing, remediation, communication, efficiency
-scoring, and multi-scenario play remain deferred.
+scoring and multi-scenario play remain deferred. After completion, learners can
+share a browser-local link to the same generated variation, copy it, or download
+a local Canvas-rendered share card. These controls carry no solution, evidence,
+or debrief data; unavailable browser capabilities show a safe fallback message.
+The Daily Incident route uses the UTC date so everyone receives the same seeded
+incident worldwide. There is no backend, account, tracking, social API, or
+remote share-card service.
 
 The deployment workflow supplies the repository base path to Vite. React Router uses that compiled base path, preserving clean navigation when the site is deployed below a domain root.
 
@@ -114,7 +125,7 @@ The deployment workflow supplies the repository base path to Vite. React Router 
 - [Milestone 5 investigation UI design](docs/superpowers/specs/2026-09-28-milestone-5-investigation-ui-design.md)
 - [Milestone 5 implementation plan](docs/superpowers/plans/2026-09-30-milestone-5-investigation-ui.md)
 
-The product design documents define a milestone-based roadmap. Milestone 8 adds
-completed-only, browser-local progress records to deterministic IAM-001
-diagnosis scoring; later milestones add remediation, communication, and more
-playable scenarios.
+The product design documents define a milestone-based roadmap. Milestone 9 adds
+completed-only, browser-local sharing and UTC daily-incident selection to
+deterministic IAM-001 diagnosis scoring; later milestones add remediation,
+communication, and more playable scenarios.
