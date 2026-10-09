@@ -1,6 +1,7 @@
 import { Route, Routes } from 'react-router-dom'
 
 import { ScenarioBrowserPage } from '../features/browse/ScenarioBrowserPage'
+import { DailyIncidentPage } from '../features/daily/DailyIncidentPage'
 import { InvestigationPage } from '../features/investigation/InvestigationPage'
 import { ProgressRoute } from '../features/progress/ProgressPage'
 import { HowItWorksPage } from '../pages/HowItWorksPage'
@@ -15,6 +16,7 @@ export function AppRoutes() {
         <Route index element={<LandingPage />} />
         <Route path="scenarios" element={<ScenarioBrowserPage />} />
         <Route path="scenarios/:scenarioId" element={<InvestigationPage />} />
+        <Route path="daily" element={<DailyIncidentPage />} />
         <Route path="progress" element={<ProgressRoute />} />
         <Route path="how-it-works" element={<HowItWorksPage />} />
         <Route path="*" element={<NotFoundPage />} />

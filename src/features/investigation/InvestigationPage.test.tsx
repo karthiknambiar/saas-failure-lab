@@ -211,6 +211,17 @@ describe('InvestigationPage', () => {
     ).toHaveAttribute('href', '/scenarios')
   })
 
+  it('recovers an invalid seeded challenge link without retaining its seed', () => {
+    renderInvestigation(`/scenarios/iam-001?seed=${'x'.repeat(129)}`)
+
+    expect(
+      screen.getByRole('heading', { name: 'Invalid challenge link' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Browse scenarios' }),
+    ).toHaveAttribute('href', '/scenarios')
+  })
+
   it('can navigate from an unavailable scenario to IAM-001', () => {
     render(
       <MemoryRouter initialEntries={['/scenarios/fnd-001']}>

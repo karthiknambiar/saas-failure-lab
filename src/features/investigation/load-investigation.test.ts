@@ -50,4 +50,55 @@ describe('loadInvestigationScenario', () => {
     expect(result.instance.composition.seed).toBe('iam-001:v3:canonical')
     expect(catalog).toEqual(before)
   })
+
+  it('composes a supplied seed deterministically without mutating the catalog', () => {
+    const catalog = structuredClone(scenarioCatalog)
+    const before = structuredClone(catalog)
+
+    const first = loadInvestigationScenario(
+      'iam-001',
+      catalog,
+      '  shared run  ',
+    )
+    const second = loadInvestigationScenario('iam-001', catalog, 'shared run')
+
+    expect(first).toEqual(second)
+    expect(first.available).toBe(true)
+    if (!first.available) throw new Error('Expected IAM-001 to be available')
+    expect(first.instance.composition.seed).toBe('shared run')
+    expect(catalog).toEqual(before)
+  })
+
+  it('uses distinct supplied seeds to produce deterministic variants', () => {
+    const first = loadInvestigationScenario('iam-001', scenarioCatalog, 'alpha')
+    const second = loadInvestigationScenario('iam-001', scenarioCatalog, 'beta')
+
+    expect(first.available).toBe(true)
+    expect(second.available).toBe(true)
+    if (!first.available || !second.available) {
+      throw new Error('Expected IAM-001 to be available')
+    }
+    expect(first.instance.composition.seed).toBe('alpha')
+    expect(second.instance.composition.seed).toBe('beta')
+    expect(first.instance.composition).not.toEqual(second.instance.composition)
+  })
+
+  it('reports invalid supplied seeds only after resolving the scenario', () => {
+    expect(loadInvestigationScenario('iam-001', scenarioCatalog, ' ')).toEqual({
+      available: false,
+      scenarioId: 'iam-001',
+      reason: 'invalid_seed',
+    })
+    expect(
+      loadInvestigationScenario(
+        'missing-001',
+        scenarioCatalog,
+        'x'.repeat(129),
+      ),
+    ).toEqual({
+      available: false,
+      scenarioId: 'missing-001',
+      reason: 'unknown',
+    })
+  })
 })

@@ -16,4 +16,17 @@ describe('AppShell', () => {
       screen.getAllByRole('link', { name: 'Progress' })[0],
     ).toHaveAttribute('href', '/progress')
   })
+
+  it('includes Daily in primary navigation', () => {
+    render(
+      <MemoryRouter initialEntries={['/daily']}>
+        <AppShell />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getAllByRole('link', { name: 'Daily' })[0]).toHaveAttribute(
+      'href',
+      '/daily',
+    )
+  })
 })

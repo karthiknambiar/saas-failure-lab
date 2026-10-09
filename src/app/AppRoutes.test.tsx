@@ -17,6 +17,7 @@ describe('application routes', () => {
     ['/', 'Practice the investigation before it is urgent.'],
     ['/scenarios', 'Browse troubleshooting scenarios'],
     ['/scenarios/iam-001', 'Login works, feature does not'],
+    ['/daily', 'Daily Incident'],
     ['/progress', 'Your progress'],
     ['/how-it-works', 'How an investigation works'],
   ])('renders %s', (path, heading) => {
@@ -41,6 +42,15 @@ describe('application routes', () => {
     expect(
       screen.getAllByRole('link', { name: 'Progress' })[0],
     ).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('marks Daily as the current navigation item', () => {
+    renderRoute('/daily')
+
+    expect(screen.getAllByRole('link', { name: 'Daily' })[0]).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   })
 
   it('renders recovery actions for unknown routes', () => {

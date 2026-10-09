@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 
 import { ActionLink } from '../../components/ActionLink'
 import {
@@ -21,18 +21,25 @@ import { loadInvestigationScenario } from './load-investigation'
 import { ReadyToDiagnose } from './ReadyToDiagnose'
 import { useInvestigationController } from './useInvestigationController'
 
-function ScenarioRecovery({ unavailable }: { unavailable: boolean }) {
+function ScenarioRecovery({
+  reason,
+}: {
+  reason: 'unknown' | 'unavailable' | 'invalid_seed'
+}) {
+  const title =
+    reason === 'invalid_seed'
+      ? 'Invalid challenge link'
+      : reason === 'unavailable'
+        ? 'This scenario is not playable yet.'
+        : 'This scenario could not be found.'
+
   return (
     <section
       className="page container scenario-recovery"
       aria-labelledby="recovery-title"
     >
       <p className="eyebrow">Scenario unavailable</p>
-      <h1 id="recovery-title">
-        {unavailable
-          ? 'This scenario is not playable yet.'
-          : 'This scenario could not be found.'}
-      </h1>
+      <h1 id="recovery-title">{title}</h1>
       <ActionLink to="/scenarios" variant="primary">
         Browse scenarios
       </ActionLink>
@@ -42,12 +49,15 @@ function ScenarioRecovery({ unavailable }: { unavailable: boolean }) {
 
 export function InvestigationPage() {
   const { scenarioId = '' } = useParams()
-  const loadedScenario = loadInvestigationScenario(scenarioId)
+  const [searchParams] = useSearchParams()
+  const loadedScenario = loadInvestigationScenario(
+    scenarioId,
+    undefined,
+    searchParams.get('seed') ?? undefined,
+  )
 
   if (!loadedScenario.available) {
-    return (
-      <ScenarioRecovery unavailable={loadedScenario.reason === 'unavailable'} />
-    )
+    return <ScenarioRecovery reason={loadedScenario.reason} />
   }
 
   return <PlayableInvestigation instance={loadedScenario.instance} />
@@ -66,7 +76,7 @@ export function PlayableInvestigation({
 }: PlayableInvestigationProps) {
   return (
     <PlayableInvestigationRun
-      key={instance.scenario.id}
+      key={`${instance.scenario.id}:${instance.composition.seed}`}
       instance={instance}
       storage={storage}
       now={now}
