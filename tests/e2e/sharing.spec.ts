@@ -150,7 +150,7 @@ test('shares a completed exact challenge variation without answer data', async (
   expect(actions.downloaded).toBe(1)
   expect(actions.revoked).toEqual(['blob:share-card'])
   expect(actions.copied).toEqual([
-    '/failure-lab/scenarios/iam-001?seed=iam-001',
+    'http://127.0.0.1:4173/failure-lab/scenarios/iam-001?seed=iam-001',
   ])
   expect(actions.copied[0]).not.toMatch(
     /root[_-]?cause|evidence|debrief|hypotheses|answer|solution/i,
