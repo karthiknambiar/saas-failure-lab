@@ -1,7 +1,23 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
+import type { ShareChallengePayload } from '../../sharing/share-types'
 import { DiagnosisResult } from './DiagnosisResult'
+
+const shareChallenge: ShareChallengePayload = {
+  scenarioId: 'iam-001',
+  scenarioVersion: 1,
+  seed: 'seed-123',
+  title: 'Login works, feature does not',
+  score: { total: 70, diagnosisPoints: 70, evidencePoints: 0 },
+  challengeUrl: '/scenarios/iam-001?seed=seed-123',
+}
+
+const shareActions = {
+  share: vi.fn().mockResolvedValue({ ok: true }),
+  copy: vi.fn().mockResolvedValue({ ok: true }),
+  download: vi.fn().mockResolvedValue({ ok: true }),
+}
 
 describe('DiagnosisResult', () => {
   it.each([
@@ -77,5 +93,28 @@ describe('DiagnosisResult', () => {
     fireEvent.click(review)
 
     expect(onReviewDebrief).toHaveBeenCalledOnce()
+  })
+
+  it('integrates a safe completed challenge sharing panel', () => {
+    render(
+      <DiagnosisResult
+        result={{
+          selectedHypothesisId: 'role-change',
+          selectedHypothesisLabel: 'A recent role change removed access',
+          total: 70,
+          outcome: 'strong',
+        }}
+        shareChallenge={shareChallenge}
+        shareActions={shareActions}
+        onReviewDebrief={vi.fn()}
+        onStartOver={vi.fn()}
+      />,
+    )
+
+    expect(
+      screen.getByRole('heading', { name: 'Share this challenge' }),
+    ).toBeVisible()
+    expect(screen.getByText('70 / 100')).toBeVisible()
+    expect(document.body).not.toHaveTextContent(/root cause|correct answer/i)
   })
 })

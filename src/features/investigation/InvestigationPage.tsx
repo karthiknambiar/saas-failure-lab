@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 
 import { ActionLink } from '../../components/ActionLink'
 import {
@@ -13,6 +13,13 @@ import {
   type StorageLike,
 } from '../../progress/browser-progress-storage'
 import { recordCompletedRun } from '../../progress/progress-model'
+import {
+  copyChallengeLink,
+  downloadShareCard,
+  shareChallenge,
+} from '../../sharing/browser-share'
+import { createShareChallengePayload } from '../../sharing/share-link'
+import type { ShareChallengeActions } from '../sharing/ShareChallengePanel'
 import { IncidentIntro } from './IncidentIntro'
 import { DebriefPage } from './DebriefPage'
 import { DiagnosisResult } from './DiagnosisResult'
@@ -21,18 +28,31 @@ import { loadInvestigationScenario } from './load-investigation'
 import { ReadyToDiagnose } from './ReadyToDiagnose'
 import { useInvestigationController } from './useInvestigationController'
 
-function ScenarioRecovery({ unavailable }: { unavailable: boolean }) {
+const shareActions: ShareChallengeActions = {
+  share: shareChallenge,
+  copy: copyChallengeLink,
+  download: downloadShareCard,
+}
+
+function ScenarioRecovery({
+  reason,
+}: {
+  reason: 'unknown' | 'unavailable' | 'invalid_seed'
+}) {
+  const title =
+    reason === 'invalid_seed'
+      ? 'Invalid challenge link'
+      : reason === 'unavailable'
+        ? 'This scenario is not playable yet.'
+        : 'This scenario could not be found.'
+
   return (
     <section
       className="page container scenario-recovery"
       aria-labelledby="recovery-title"
     >
       <p className="eyebrow">Scenario unavailable</p>
-      <h1 id="recovery-title">
-        {unavailable
-          ? 'This scenario is not playable yet.'
-          : 'This scenario could not be found.'}
-      </h1>
+      <h1 id="recovery-title">{title}</h1>
       <ActionLink to="/scenarios" variant="primary">
         Browse scenarios
       </ActionLink>
@@ -42,12 +62,15 @@ function ScenarioRecovery({ unavailable }: { unavailable: boolean }) {
 
 export function InvestigationPage() {
   const { scenarioId = '' } = useParams()
-  const loadedScenario = loadInvestigationScenario(scenarioId)
+  const [searchParams] = useSearchParams()
+  const loadedScenario = loadInvestigationScenario(
+    scenarioId,
+    undefined,
+    searchParams.get('seed') ?? undefined,
+  )
 
   if (!loadedScenario.available) {
-    return (
-      <ScenarioRecovery unavailable={loadedScenario.reason === 'unavailable'} />
-    )
+    return <ScenarioRecovery reason={loadedScenario.reason} />
   }
 
   return <PlayableInvestigation instance={loadedScenario.instance} />
@@ -66,7 +89,7 @@ export function PlayableInvestigation({
 }: PlayableInvestigationProps) {
   return (
     <PlayableInvestigationRun
-      key={instance.scenario.id}
+      key={`${instance.scenario.id}:${instance.composition.seed}`}
       instance={instance}
       storage={storage}
       now={now}
@@ -139,10 +162,21 @@ function PlayableInvestigationRun({
   }
 
   if (controller.state.status === 'completed') {
+    const debrief = getDebriefView(instance, controller.state)
+    const shareChallengePayload =
+      typeof window === 'undefined'
+        ? undefined
+        : createShareChallengePayload(instance, debrief, {
+            origin: window.location.origin,
+            baseUrl: import.meta.env.BASE_URL,
+          })
+
     if (showDebrief) {
       return (
         <DebriefPage
-          debrief={getDebriefView(instance, controller.state)}
+          debrief={debrief}
+          shareChallenge={shareChallengePayload}
+          shareActions={shareActions}
           onBackToResult={() => setShowDebrief(false)}
           onStartOver={startOver}
         />
@@ -152,6 +186,8 @@ function PlayableInvestigationRun({
     return (
       <DiagnosisResult
         result={getDiagnosisResultView(instance, controller.state)}
+        shareChallenge={shareChallengePayload}
+        shareActions={shareActions}
         onReviewDebrief={() => setShowDebrief(true)}
         onStartOver={startOver}
       />

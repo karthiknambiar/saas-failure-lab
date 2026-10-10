@@ -2,6 +2,11 @@ import { useEffect, useRef } from 'react'
 
 import { Button } from '../../components/Button'
 import type { DiagnosisResultView } from '../../engine/investigation-selectors'
+import type { ShareChallengePayload } from '../../sharing/share-types'
+import {
+  ShareChallengePanel,
+  type ShareChallengeActions,
+} from '../sharing/ShareChallengePanel'
 
 const outcomeLabels = {
   strong: 'Strong evidence-backed diagnosis',
@@ -11,10 +16,14 @@ const outcomeLabels = {
 
 export function DiagnosisResult({
   result,
+  shareChallenge,
+  shareActions,
   onReviewDebrief,
   onStartOver,
 }: {
   result: DiagnosisResultView
+  shareChallenge?: ShareChallengePayload
+  shareActions?: ShareChallengeActions
   onReviewDebrief: () => void
   onStartOver: () => void
 }) {
@@ -44,6 +53,9 @@ export function DiagnosisResult({
       <p className="diagnosis-result__outcome">
         {outcomeLabels[result.outcome]}
       </p>
+      {shareChallenge && shareActions ? (
+        <ShareChallengePanel payload={shareChallenge} actions={shareActions} />
+      ) : null}
       <div className="action-row">
         <Button onClick={onReviewDebrief}>Review debrief</Button>
         <Button variant="primary" onClick={onStartOver}>

@@ -16,12 +16,14 @@ Page composition + design-system primitives
 Static HTML, CSS, and JavaScript in dist/
 ```
 
-There is no runtime backend, authentication system, database, remote AI dependency, or secret credential path.
+There is no runtime backend, authentication system, database, tracking,
+social API dependency, remote AI dependency, or secret credential path.
 
 ## Product boundaries
 
-Milestone 8 implements the IAM-001 investigation, diagnosis result,
-completed-only debrief, and browser-local completed-run progress while preserving the
+Milestone 9 implements the IAM-001 investigation, diagnosis result,
+completed-only debrief, browser-local completed-run progress, completed-only
+sharing, and UTC daily incidents while preserving the
 static architecture:
 
 ```text
@@ -35,6 +37,13 @@ accessible desktop/mobile investigation UI
     ↓ deterministic diagnosis/evidence scoring
 safe completed-result view and completed-only debrief projection
     ↓ versioned browser-local completed-run storage
+    ↓ completion-only local share links and Canvas share cards
+    ↓
+static HTML, CSS, and JavaScript in dist/
+
+React Router static `/daily` route
+    ↓ UTC-date daily incident selection
+    ↓ seeded playable challenge link
     ↓
 static HTML, CSS, and JavaScript in dist/
 ```
@@ -50,15 +59,15 @@ The boundaries have clear responsibilities:
 - **Validation:** Build/CI-time parsing, Zod validation, semantic checks, and normalization.
 - **Engine:** Pure TypeScript composition, investigation transitions, and deterministic diagnosis/evidence scoring.
 - **Presentation:** Accessible React views that render safe result summaries and
-  completed-only debrief projections without embedding gameplay rules.
+  completed-only debrief and share projections without embedding gameplay rules.
 - **Storage:** A versioned browser-local adapter owns completed-run encoding,
   loading, saving, and reset. Malformed or unknown saved values recover safely
   to empty progress; storage failures remain non-blocking.
 
 The routing, presentation, content, validation, composition, investigation,
 scoring, and storage boundaries now exist. Storage remains deliberately narrow:
-it records completed runs only and has no account, backend, or synchronization
-responsibility.
+it records completed runs only and has no account, backend, synchronization,
+tracking, or social API responsibility.
 
 ## Architecture decisions
 
@@ -126,6 +135,18 @@ on React, browser APIs, the current clock, or runtime randomness. Independent
 dimension streams mean adding a future permitted dimension does not reshuffle
 existing dimensions for the same scenario version and seed.
 
+### Completion-only sharing and daily incidents
+
+Only a completed challenge exposes sharing controls. The generated link contains
+the scenario identity and seed needed to recreate the same variation; it does
+not contain a solution, selected evidence, diagnosis, score breakdown, or
+debrief content. Copy and native-share use browser capabilities when available.
+The downloaded share card is rendered locally with Canvas and Blob/URL browser
+APIs; capability failures remain a local, visible fallback without a remote
+image service. A Daily Incident is chosen deterministically from the UTC date,
+so the same UTC day resolves to the same seeded playable incident worldwide.
+Neither flow introduces an account, backend, tracking, analytics, or social API.
+
 ### Pure investigation transitions
 
 Milestone 4 stores durable investigation facts and derives availability from
@@ -182,7 +203,7 @@ The deployment workflow builds on GitHub-hosted runners and publishes only `dist
 
 ## Current milestone boundary
 
-Milestone 8 makes IAM-001 playable from the landing page and scenario browser
+Milestone 9 makes IAM-001 playable from the landing page and scenario browser
 through a diagnosis result and a completed-only debrief. The static UI uses the canonical IAM-001 seed,
 engine-controlled evidence gating, safe evidence projections, bookmarks,
 hypothesis selection, an action trail, deterministic 70/30 diagnosis/evidence
@@ -198,7 +219,6 @@ not add accounts, a backend, synchronization, active-run resume, export, or
 import; static deployment remains unchanged. FND-001 and every other authored
 scenario remain unavailable for play.
 
-Remediation, communication, efficiency feedback, export/import, sharing, daily
-challenges, multi-scenario randomization, and full scenario-browser filtering
-remain later work. No backend state or synchronized persistence is part of this
-milestone.
+Remediation, communication, efficiency feedback, export/import, multi-scenario
+randomization, and full scenario-browser filtering remain later work. No backend
+state or synchronized persistence is part of this milestone.
