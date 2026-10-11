@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { scenarioCatalog } from '../../generated/scenario-catalog'
 import {
   canonicalScenarioSeed,
+  dailyPlayableScenarios,
   loadInvestigationScenario,
 } from './load-investigation'
 
@@ -19,10 +20,27 @@ describe('loadInvestigationScenario', () => {
     expect(second).toEqual(first)
   })
 
-  it('reports catalogued but non-playable scenarios as unavailable', () => {
-    expect(loadInvestigationScenario('fnd-001')).toEqual({
+  it('loads every generated scenario as playable', () => {
+    for (const { id } of scenarioCatalog) {
+      expect(loadInvestigationScenario(id).available).toBe(true)
+    }
+  })
+
+  it('exposes every generated scenario to daily selection', () => {
+    expect(dailyPlayableScenarios.map(({ id }) => id)).toEqual(
+      scenarioCatalog.map(({ id }) => id),
+    )
+  })
+
+  it('reports non-generated catalog scenarios as unavailable', () => {
+    const unavailableScenario = structuredClone(scenarioCatalog[0])
+    unavailableScenario.id = 'preview-001'
+
+    expect(
+      loadInvestigationScenario('preview-001', [unavailableScenario]),
+    ).toEqual({
       available: false,
-      scenarioId: 'fnd-001',
+      scenarioId: 'preview-001',
       reason: 'unavailable',
     })
   })
