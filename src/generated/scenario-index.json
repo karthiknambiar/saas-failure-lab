@@ -5,10 +5,7 @@
     "domain": "api",
     "difficulty": "intermediate",
     "estimatedMinutes": 9,
-    "concepts": [
-      "authentication",
-      "connectivity"
-    ],
+    "concepts": ["authentication", "connectivity"],
     "symptomSummary": "The nightly job reaches its destination but is rejected."
   },
   {
@@ -17,10 +14,7 @@
     "domain": "api",
     "difficulty": "intermediate",
     "estimatedMinutes": 9,
-    "concepts": [
-      "permissions",
-      "scopes"
-    ],
+    "concepts": ["permissions", "scopes"],
     "symptomSummary": "Invoice viewing works while creation is refused."
   },
   {
@@ -29,10 +23,7 @@
     "domain": "api",
     "difficulty": "advanced",
     "estimatedMinutes": 10,
-    "concepts": [
-      "rate-limits",
-      "retries"
-    ],
+    "concepts": ["rate-limits", "retries"],
     "symptomSummary": "A sync receives repeated capacity responses and falls further behind."
   },
   {
@@ -41,10 +32,7 @@
     "domain": "data",
     "difficulty": "intermediate",
     "estimatedMinutes": 10,
-    "concepts": [
-      "pipeline-counts",
-      "validation"
-    ],
+    "concepts": ["pipeline-counts", "validation"],
     "symptomSummary": "The destination count is lower after an otherwise completed import."
   },
   {
@@ -66,10 +54,7 @@
     "domain": "fundamentals",
     "difficulty": "intermediate",
     "estimatedMinutes": 9,
-    "concepts": [
-      "causal-reasoning",
-      "timeline-analysis"
-    ],
+    "concepts": ["causal-reasoning", "timeline-analysis"],
     "symptomSummary": "A workflow began failing after a deployment was announced."
   },
   {
@@ -78,10 +63,7 @@
     "domain": "fundamentals",
     "difficulty": "beginner",
     "estimatedMinutes": 8,
-    "concepts": [
-      "expected-behavior",
-      "time-boundaries"
-    ],
+    "concepts": ["expected-behavior", "time-boundaries"],
     "symptomSummary": "A requested daily export looks empty in the local morning."
   },
   {
@@ -103,10 +85,7 @@
     "domain": "identity",
     "difficulty": "intermediate",
     "estimatedMinutes": 9,
-    "concepts": [
-      "authentication",
-      "provisioning"
-    ],
+    "concepts": ["authentication", "provisioning"],
     "symptomSummary": "New accounts are not appearing while existing sign-in remains normal."
   },
   {
@@ -115,10 +94,7 @@
     "domain": "integrations",
     "difficulty": "intermediate",
     "estimatedMinutes": 9,
-    "concepts": [
-      "delivery",
-      "idempotency"
-    ],
+    "concepts": ["delivery", "idempotency"],
     "symptomSummary": "Customer records appear twice after delayed deliveries."
   },
   {
@@ -127,10 +103,7 @@
     "domain": "integrations",
     "difficulty": "advanced",
     "estimatedMinutes": 10,
-    "concepts": [
-      "backoff",
-      "queues"
-    ],
+    "concepts": ["backoff", "queues"],
     "symptomSummary": "A provider capacity response is followed by a rapidly growing queue."
   },
   {
@@ -139,10 +112,7 @@
     "domain": "browser",
     "difficulty": "beginner",
     "estimatedMinutes": 8,
-    "concepts": [
-      "client-comparison",
-      "local-state"
-    ],
+    "concepts": ["client-comparison", "local-state"],
     "symptomSummary": "Settings fail in one browser profile while another profile succeeds."
   }
 ]
