@@ -28,6 +28,7 @@
 ## Task 1: Establish the twelve-scenario catalog contract and public browser behavior
 
 **Files:**
+
 - Modify: `src/content/scenario-content.test.ts`
 - Modify: `src/features/browse/ScenarioBrowserPage.tsx`
 - Modify: `src/app/AppRoutes.test.tsx`
@@ -38,23 +39,42 @@
 
   ```ts
   const expectedScenarioIds = [
-    'api-001', 'api-002', 'api-004', 'dat-003', 'fnd-001', 'fnd-002',
-    'fnd-003', 'iam-001', 'iam-004', 'int-001', 'int-004', 'web-001',
+    'api-001',
+    'api-002',
+    'api-004',
+    'dat-003',
+    'fnd-001',
+    'fnd-002',
+    'fnd-003',
+    'iam-001',
+    'iam-004',
+    'int-001',
+    'int-004',
+    'web-001',
   ] as const
 
   expect(normalizeScenarioIndex(documents).map(({ id }) => id)).toEqual(
     expectedScenarioIds,
   )
   expect(new Set(documents.map(({ scenario }) => scenario.domain))).toEqual(
-    new Set(['fundamentals', 'api', 'identity', 'integrations', 'data', 'browser']),
+    new Set([
+      'fundamentals',
+      'api',
+      'identity',
+      'integrations',
+      'data',
+      'browser',
+    ]),
   )
   ```
 
   ```tsx
-  expect(screen.getByRole('link', { name: /open api suddenly returns 401/i }))
-    .toHaveAttribute('href', '/scenarios/api-001')
-  expect(screen.getByRole('link', { name: /open one browser profile fails/i }))
-    .toHaveAttribute('href', '/scenarios/web-001')
+  expect(
+    screen.getByRole('link', { name: /open api suddenly returns 401/i }),
+  ).toHaveAttribute('href', '/scenarios/api-001')
+  expect(
+    screen.getByRole('link', { name: /open one browser profile fails/i }),
+  ).toHaveAttribute('href', '/scenarios/web-001')
   ```
 
 - [ ] **Step 2: Run the focused tests and verify they fail because the ten YAML files and generalized browser rendering do not exist.**
@@ -68,16 +88,18 @@
   Remove `iamScenario`; map every `scenarioIndex` entry to one semantic `Card`. Retain public index fields only, use the existing `sentenceCase`, and make the link label deterministic:
 
   ```tsx
-  {scenarios.map((scenario) => (
-    <Card as="article" className="scenario-card" key={scenario.id}>
-      <div className="scenario-card__metadata">...</div>
-      <h2>{scenario.title}</h2>
-      <p>{scenario.symptomSummary}</p>
-      <ActionLink to={`/scenarios/${scenario.id}`} variant="primary">
-        Open {scenario.title}
-      </ActionLink>
-    </Card>
-  ))}
+  {
+    scenarios.map((scenario) => (
+      <Card as="article" className="scenario-card" key={scenario.id}>
+        <div className="scenario-card__metadata">...</div>
+        <h2>{scenario.title}</h2>
+        <p>{scenario.symptomSummary}</p>
+        <ActionLink to={`/scenarios/${scenario.id}`} variant="primary">
+          Open {scenario.title}
+        </ActionLink>
+      </Card>
+    ))
+  }
   ```
 
   Show the existing unavailable status only when the generated array is empty. Do not add filtering, random mode, or public answer content.
@@ -91,6 +113,7 @@
 ## Task 2: Author the fundamentals and API cases
 
 **Files:**
+
 - Create: `content/scenarios/fnd-002.yaml`
 - Create: `content/scenarios/fnd-003.yaml`
 - Create: `content/scenarios/api-001.yaml`
@@ -101,13 +124,13 @@
 
   Author exactly these incident contracts, each with three customer names, at least two timestamp offsets, three-or-more hypotheses, safe immediate/prevention remediation choices, two-or-more communication choices including one excellent option, a valid evidence chain, and a complete efficient path:
 
-  | File | Root-cause ID | Critical evidence chain | Transferable lesson |
-  |---|---|---|---|
-  | `fnd-002.yaml` | `approval-policy-changed` | `release-timeline`, `failure-timeline`, `policy-audit`, `tenant-comparison` | Build a timeline before accepting a causal claim. |
-  | `fnd-003.yaml` | `utc-range-interpretation` | `requested-range`, `exported-timestamps`, `user-timezone`, `date-filter-help` | Verify expected behavior and time boundaries before treating a surprising result as a defect. |
-  | `api-001.yaml` | `rotated-credential-revoked` | `http-response`, `network-connectivity`, `credential-audit`, `previous-success` | Separate connectivity from authentication. |
-  | `api-002.yaml` | `invoice-write-scope-missing` | `read-request-success`, `write-request-forbidden`, `token-scopes`, `endpoint-permission` | A valid credential can still lack permission for a specific action. |
-  | `api-004.yaml` | `immediate-429-retries` | `rate-limit-response`, `retry-after`, `request-frequency`, `backlog-trend` | Retries can amplify a failure. |
+  | File           | Root-cause ID                 | Critical evidence chain                                                                  | Transferable lesson                                                                           |
+  | -------------- | ----------------------------- | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+  | `fnd-002.yaml` | `approval-policy-changed`     | `release-timeline`, `failure-timeline`, `policy-audit`, `tenant-comparison`              | Build a timeline before accepting a causal claim.                                             |
+  | `fnd-003.yaml` | `utc-range-interpretation`    | `requested-range`, `exported-timestamps`, `user-timezone`, `date-filter-help`            | Verify expected behavior and time boundaries before treating a surprising result as a defect. |
+  | `api-001.yaml` | `rotated-credential-revoked`  | `http-response`, `network-connectivity`, `credential-audit`, `previous-success`          | Separate connectivity from authentication.                                                    |
+  | `api-002.yaml` | `invoice-write-scope-missing` | `read-request-success`, `write-request-forbidden`, `token-scopes`, `endpoint-permission` | A valid credential can still lack permission for a specific action.                           |
+  | `api-004.yaml` | `immediate-429-retries`       | `rate-limit-response`, `retry-after`, `request-frequency`, `backlog-trend`               | Retries can amplify a failure.                                                                |
 
   Use only the supported tools (`service_status`, `user_scope`, `identity_events`, `role_configuration`, `audit_log`) and evidence content kinds. Map the catalog concepts to those generic tools without vendor naming: for example, API HTTP response and rate-limit data can be a `status`, request comparisons a `table`, configuration/audit facts a `key_value` or `timeline`.
 
@@ -131,6 +154,7 @@
 ## Task 3: Author the identity, integration, data, and browser cases; generate artifacts
 
 **Files:**
+
 - Create: `content/scenarios/iam-004.yaml`
 - Create: `content/scenarios/int-001.yaml`
 - Create: `content/scenarios/int-004.yaml`
@@ -143,13 +167,13 @@
 
   Use these exact instructional contracts and the same authoring minimums from Task 2:
 
-  | File | Root-cause ID | Critical evidence chain | Transferable lesson |
-  |---|---|---|---|
-  | `iam-004.yaml` | `required-provisioning-attribute-unmapped` | `authentication-health`, `provisioning-response`, `validation-error`, `attribute-map` | SSO and provisioning are separate flows. |
-  | `int-001.yaml` | `webhook-duplicate-not-idempotent` | `delivery-identifiers`, `first-delivery-timeout`, `duplicate-records`, `idempotency-store` | Event delivery is often at-least-once, so consumers must tolerate duplicates. |
-  | `int-004.yaml` | `retry-storm-queue-backlog` | `rate-limit-responses`, `retry-intervals`, `queue-depth`, `worker-throughput`, `provider-recovery` | Healthy workers can still be overwhelmed by bad retry behavior. |
-  | `dat-003.yaml` | `destination-required-field-missing` | `source-count`, `ingestion-count`, `processing-count`, `validation-failures`, `destination-count` | Trace counts across every pipeline stage rather than checking only endpoints. |
-  | `web-001.yaml` | `stale-local-configuration` | `server-request-result`, `clean-profile-comparison`, `local-state-timestamp`, `cached-config-version` | Compare client environments before escalating a platform issue. |
+  | File           | Root-cause ID                              | Critical evidence chain                                                                               | Transferable lesson                                                           |
+  | -------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+  | `iam-004.yaml` | `required-provisioning-attribute-unmapped` | `authentication-health`, `provisioning-response`, `validation-error`, `attribute-map`                 | SSO and provisioning are separate flows.                                      |
+  | `int-001.yaml` | `webhook-duplicate-not-idempotent`         | `delivery-identifiers`, `first-delivery-timeout`, `duplicate-records`, `idempotency-store`            | Event delivery is often at-least-once, so consumers must tolerate duplicates. |
+  | `int-004.yaml` | `retry-storm-queue-backlog`                | `rate-limit-responses`, `retry-intervals`, `queue-depth`, `worker-throughput`, `provider-recovery`    | Healthy workers can still be overwhelmed by bad retry behavior.               |
+  | `dat-003.yaml` | `destination-required-field-missing`       | `source-count`, `ingestion-count`, `processing-count`, `validation-failures`, `destination-count`     | Trace counts across every pipeline stage rather than checking only endpoints. |
+  | `web-001.yaml` | `stale-local-configuration`                | `server-request-result`, `clean-profile-comparison`, `local-state-timestamp`, `cached-config-version` | Compare client environments before escalating a platform issue.               |
 
   Give each case a fair red herring where the catalog calls for one; use `choose: 0` only when no fair distractor is authored. Do not put a root-cause ID or correct hypothesis label in public symptom variants.
 
@@ -185,6 +209,7 @@
 ## Task 4: Create the pure Scenario Inspector model
 
 **Files:**
+
 - Create: `src/developer/inspector-model.ts`
 - Create: `src/developer/inspector-model.test.ts`
 
@@ -194,12 +219,22 @@
 
   ```ts
   export type InspectorResult =
-    | { available: true; instance: ScenarioInstance; dependencies: InspectorDependency[] }
+    | {
+        available: true
+        instance: ScenarioInstance
+        dependencies: InspectorDependency[]
+      }
     | { available: false; reason: 'unknown' | 'invalid_seed' }
 
   expect(inspectScenario('api-001', 'author-seed').available).toBe(true)
-  expect(inspectScenario('not-real', 'author-seed')).toEqual({ available: false, reason: 'unknown' })
-  expect(inspectScenario('api-001', '   ')).toEqual({ available: false, reason: 'invalid_seed' })
+  expect(inspectScenario('not-real', 'author-seed')).toEqual({
+    available: false,
+    reason: 'unknown',
+  })
+  expect(inspectScenario('api-001', '   ')).toEqual({
+    available: false,
+    reason: 'invalid_seed',
+  })
   ```
 
 - [ ] **Step 2: Run the model test and verify it fails because the module does not exist.**
@@ -240,6 +275,7 @@
 ## Task 5: Create the pure Scoring Simulator model
 
 **Files:**
+
 - Create: `src/developer/scoring-simulator-model.ts`
 - Create: `src/developer/scoring-simulator-model.test.ts`
 
@@ -248,14 +284,29 @@
   The model accepts a scenario ID, selected hypothesis ID, and bookmarked evidence IDs; it must use `scoreDiagnosis` rather than reproduce points:
 
   ```ts
-  expect(simulateScore({
-    scenarioId: 'iam-001',
-    selectedHypothesisId: 'reporting-role-removed',
-    bookmarkedEvidenceIds: ['affected-user-scope', 'authentication-events', 'role-configuration', 'role-audit-history'],
-  })).toEqual({ available: true, score: { total: 100, diagnosisPoints: 70, evidencePoints: 30 } })
+  expect(
+    simulateScore({
+      scenarioId: 'iam-001',
+      selectedHypothesisId: 'reporting-role-removed',
+      bookmarkedEvidenceIds: [
+        'affected-user-scope',
+        'authentication-events',
+        'role-configuration',
+        'role-audit-history',
+      ],
+    }),
+  ).toEqual({
+    available: true,
+    score: { total: 100, diagnosisPoints: 70, evidencePoints: 30 },
+  })
 
-  expect(simulateScore({ scenarioId: 'not-real', selectedHypothesisId: 'x', bookmarkedEvidenceIds: [] }))
-    .toEqual({ available: false, reason: 'unknown_scenario' })
+  expect(
+    simulateScore({
+      scenarioId: 'not-real',
+      selectedHypothesisId: 'x',
+      bookmarkedEvidenceIds: [],
+    }),
+  ).toEqual({ available: false, reason: 'unknown_scenario' })
   ```
 
 - [ ] **Step 2: Run the test and verify it fails because the module does not exist.**
@@ -293,6 +344,7 @@
 ## Task 6: Add unlinked, accessible Inspector and Simulator routes
 
 **Files:**
+
 - Create: `src/features/developer/ScenarioInspectorPage.tsx`
 - Create: `src/features/developer/ScenarioInspectorPage.test.tsx`
 - Create: `src/features/developer/ScoringSimulatorPage.tsx`
@@ -307,12 +359,19 @@
 
   ```tsx
   renderRoute('/developer/inspector/api-001?seed=author-seed')
-  expect(screen.getByRole('heading', { name: 'Scenario Inspector' })).toBeInTheDocument()
+  expect(
+    screen.getByRole('heading', { name: 'Scenario Inspector' }),
+  ).toBeInTheDocument()
   expect(screen.getByText('api-001')).toBeInTheDocument()
-  expect(screen.getByRole('heading', { name: 'Evidence dependencies' })).toBeInTheDocument()
+  expect(
+    screen.getByRole('heading', { name: 'Evidence dependencies' }),
+  ).toBeInTheDocument()
 
   renderRoute('/developer/scoring/iam-001')
-  await user.selectOptions(screen.getByLabelText('Hypothesis'), 'reporting-role-removed')
+  await user.selectOptions(
+    screen.getByLabelText('Hypothesis'),
+    'reporting-role-removed',
+  )
   await user.click(screen.getByLabelText(/affected user scope/i))
   expect(screen.getByText('Score simulation')).toBeInTheDocument()
   ```
@@ -356,6 +415,7 @@
 ## Task 7: Document, verify generated artifacts, and protect the static release
 
 **Files:**
+
 - Modify: `docs/scenario-authoring.md`
 - Modify: `docs/architecture.md`
 - Modify: `README.md`
