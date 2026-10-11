@@ -6,21 +6,21 @@ Approved for specification review on 2026-10-10.
 
 ## Scope
 
-Milestone 10 expands SaaS Failure Lab from its existing IAM-001 playable
-scenario to the recommended 12-scenario beta catalog. It also adds two
+Milestone 10 expands SaaS Failure Lab from its existing IAM-001 and FND-001
+playable scenarios to the recommended 12-scenario beta catalog. It also adds two
 developer-only, deterministic authoring aids: a Scenario Inspector and a
 Scoring Simulator.
 
-The milestone includes these additional YAML scenarios:
+The milestone adds these YAML scenarios:
 
-- FND-001, FND-002, FND-003;
+- FND-002, FND-003;
 - API-001, API-002, API-004;
 - IAM-004;
 - INT-001, INT-004;
 - DAT-003; and
 - WEB-001.
 
-Together with IAM-001, this provides twelve playable scenarios across
+Together with the existing IAM-001 and FND-001, this provides twelve playable scenarios across
 fundamentals, APIs, identity, integrations, data, and browser domains.
 
 ## Content architecture
