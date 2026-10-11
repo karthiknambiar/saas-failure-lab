@@ -1,0 +1,177 @@
+id: int-004
+version: 1
+title: Retry storm overwhelms the queue
+domain: integrations
+difficulty: advanced
+estimated_minutes: 10
+learning:
+  {
+    concepts: [queues, backoff],
+    objectives: [Recognize how healthy workers can be overwhelmed.],
+  }
+variations:
+  {
+    customer_names: [Hearthline, Umber Coast, Meridian Cart],
+    timestamp_offsets_minutes: [0, 26],
+  }
+customer_context:
+  [
+    '{{customerName}} is a fictional fulfillment company.',
+    'Its order updates are delayed.',
+  ]
+brief:
+  {
+    severity: high,
+    business_impact: Order updates are delayed while the processing queue grows.,
+    symptom_variants:
+      [
+        A provider capacity response is followed by a rapidly growing queue.,
+        Workers stay online but completed updates fall behind.,
+      ],
+  }
+root_cause:
+  {
+    id: retry-storm-queue-backlog,
+    category: retry-policy,
+    explanation: A retry storm overloaded the queue despite healthy workers.,
+  }
+hypotheses:
+  - {
+      id: retry-storm-queue-backlog,
+      label: Fast retries are flooding the queue.,
+    }
+  - { id: worker-outage, label: Workers are unavailable. }
+  - {
+      id: provider-permanent-failure,
+      label: The provider has permanently failed.,
+    }
+evidence:
+  - {
+      id: rate-limit-responses,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [],
+      content: { kind: key_value, values: { response: '429 rate limited' } },
+      explanation: Provider capacity is temporarily constrained.,
+    }
+  - {
+      id: retry-intervals,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [rate-limit-responses],
+      content:
+        {
+          kind: key_value,
+          values:
+            { configured_interval: '1 second', provider_wait: '60 seconds' },
+        },
+      explanation: Retries are too frequent.,
+    }
+  - {
+      id: queue-depth,
+      tool: service_status,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [retry-intervals],
+      content:
+        {
+          kind: table,
+          columns: [time, queued],
+          rows:
+            [
+              { time: '09:00', queued: '80' },
+              { time: '09:10', queued: '1400' },
+            ],
+        },
+      explanation: Queue depth grows with retries.,
+    }
+  - {
+      id: worker-throughput,
+      tool: service_status,
+      cost: 1,
+      relevance: supporting,
+      unlock_after: [queue-depth],
+      content:
+        {
+          kind: status,
+          state: operational,
+          detail: Workers are healthy and processing their capacity.,
+        },
+      explanation: Healthy workers cannot absorb retry amplification.,
+    }
+  - {
+      id: provider-recovery,
+      tool: service_status,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [worker-throughput],
+      content:
+        {
+          kind: status,
+          state: recovered,
+          detail: Provider accepts paced requests after recovery.,
+        },
+      explanation: Backoff allows recovery.,
+    }
+red_herrings: { pool: [], choose: 0 }
+remediation:
+  {
+    choices:
+      [
+        {
+          id: pause-and-backoff,
+          label: Pause rapid retries and honor paced backoff,
+          phase: immediate,
+          quality: correct,
+          explanation: It drains the queue safely.,
+        },
+        {
+          id: queue-guardrail,
+          label: Add retry and queue-depth circuit breakers,
+          phase: prevention,
+          quality: correct,
+          explanation: It prevents another storm.,
+        },
+      ],
+  }
+communication:
+  {
+    choices:
+      [
+        {
+          id: queue-update,
+          message: 'Workers are healthy; rapid retries after a provider capacity response are growing the queue, and we are applying paced recovery.',
+          quality: excellent,
+          explanation: It correctly states scope and action.,
+        },
+        {
+          id: fulfillment-update,
+          message: Order updates are delayed but preserved in the queue; we will report recovery progress within 20 minutes.,
+          quality: excellent,
+          explanation: It gives customer-relevant status.,
+        },
+      ],
+  }
+debrief:
+  {
+    root_cause_explanation: Healthy workers were overwhelmed by retry volume after a temporary rate limit.,
+    evidence_chain:
+      [
+        rate-limit-responses,
+        retry-intervals,
+        queue-depth,
+        worker-throughput,
+        provider-recovery,
+      ],
+    efficient_path:
+      [
+        { kind: evidence, ref: rate-limit-responses },
+        { kind: evidence, ref: retry-intervals },
+        { kind: evidence, ref: queue-depth },
+        { kind: evidence, ref: worker-throughput },
+        { kind: evidence, ref: provider-recovery },
+      ],
+    transferable_lesson: Healthy workers can still be overwhelmed.,
+  }

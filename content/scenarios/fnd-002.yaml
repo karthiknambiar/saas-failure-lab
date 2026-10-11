@@ -1,0 +1,175 @@
+id: fnd-002
+version: 1
+title: Did the deployment cause the failure?
+domain: fundamentals
+difficulty: intermediate
+estimated_minutes: 9
+learning:
+  {
+    concepts: [timeline-analysis, causal-reasoning],
+    objectives: [Build a timeline before accepting a causal claim.],
+  }
+variations:
+  {
+    customer_names: [Maple Harbor, Silver Lantern, Orchard Vale],
+    timestamp_offsets_minutes: [0, 27],
+  }
+customer_context:
+  [
+    '{{customerName}} is a fictional planning company.',
+    'Its operations team is preparing a regional planning run.',
+  ]
+brief:
+  {
+    severity: high,
+    business_impact: Regional planners cannot complete the morning run on schedule.,
+    symptom_variants:
+      [
+        A workflow began failing after a deployment was announced.,
+        Teams want the deployment rolled back because failures appeared that morning.,
+      ],
+  }
+root_cause:
+  {
+    id: approval-policy-changed,
+    category: configuration,
+    explanation: An approval policy change rejected runs before the later deployment began.,
+  }
+hypotheses:
+  - {
+      id: approval-policy-changed,
+      label: A policy change rejected the new runs.,
+    }
+  - {
+      id: deployment-defect,
+      label: The deployment introduced a processing defect.,
+    }
+  - { id: service-outage, label: A shared service is unavailable. }
+evidence:
+  - id: release-timeline
+    tool: audit_log
+    cost: 1
+    relevance: supporting
+    unlock_after: []
+    content:
+      {
+        kind: timeline,
+        events:
+          [
+            {
+              time: { day_offset: 0, clock: '09:40' },
+              event: Deployment started after failures were reported.,
+            },
+          ],
+      }
+    explanation: The deployment occurred after the first failure.
+  - id: failure-timeline
+    tool: audit_log
+    cost: 1
+    relevance: critical
+    unlock_after: [release-timeline]
+    content:
+      {
+        kind: timeline,
+        events:
+          [
+            {
+              time: { day_offset: 0, clock: '09:12' },
+              event: First run was rejected by an approval check.,
+            },
+          ],
+      }
+    explanation: The failure predates the release.
+  - id: policy-audit
+    tool: role_configuration
+    cost: 2
+    relevance: critical
+    unlock_after: [failure-timeline]
+    content:
+      {
+        kind: key_value,
+        values:
+          {
+            prior_policy: 'Regional plans accepted',
+            current_policy: 'Director approval required',
+            changed_at: '09:05',
+          },
+      }
+    explanation: The policy changed shortly before the failures.
+  - id: tenant-comparison
+    tool: user_scope
+    cost: 1
+    relevance: critical
+    unlock_after: [policy-audit]
+    content:
+      {
+        kind: table,
+        columns: [cohort, policy, result],
+        rows:
+          [
+            {
+              cohort: Affected region,
+              policy: Director approval,
+              result: Rejected,
+            },
+            {
+              cohort: Other region,
+              policy: Standard approval,
+              result: Accepted,
+            },
+          ],
+      }
+    explanation: Only the changed policy cohort fails.
+red_herrings: { pool: [], choose: 0 }
+remediation:
+  {
+    choices:
+      [
+        {
+          id: restore-policy,
+          label: Restore the approved regional policy,
+          phase: immediate,
+          quality: correct,
+          explanation: It restores the prior validated approval path.,
+        },
+        {
+          id: add-policy-review,
+          label: Require approval-policy review and validation,
+          phase: prevention,
+          quality: correct,
+          explanation: It catches future policy changes before impact.,
+        },
+      ],
+  }
+communication:
+  {
+    choices:
+      [
+        {
+          id: scoped-update,
+          message: We confirmed the failures began before the deployment and are correcting a regional approval policy; the next update is in 20 minutes.,
+          quality: excellent,
+          explanation: It states verified timing and a clear next step.,
+        },
+        {
+          id: impact-update,
+          message: The issue is limited to one regional planning path and we are restoring its approved configuration.,
+          quality: excellent,
+          explanation: It communicates scope without speculation.,
+        },
+      ],
+  }
+debrief:
+  {
+    root_cause_explanation: A policy change preceded both the failures and the deployment.,
+    evidence_chain:
+      [release-timeline, failure-timeline, policy-audit, tenant-comparison],
+    efficient_path:
+      [
+        { kind: evidence, ref: release-timeline },
+        { kind: evidence, ref: failure-timeline },
+        { kind: evidence, ref: policy-audit },
+        { kind: evidence, ref: tenant-comparison },
+      ],
+    transferable_lesson: Build a timeline before accepting a causal claim.,
+  }

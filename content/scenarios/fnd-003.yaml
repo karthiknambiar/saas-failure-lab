@@ -1,0 +1,160 @@
+id: fnd-003
+version: 1
+title: Export appears to be missing
+domain: fundamentals
+difficulty: beginner
+estimated_minutes: 8
+learning:
+  {
+    concepts: [expected-behavior, time-boundaries],
+    objectives: [Verify expected behavior and time boundaries.],
+  }
+variations:
+  {
+    customer_names: [Cobalt Grove, Brightfield Supply, Willow Metric],
+    timestamp_offsets_minutes: [0, 35],
+  }
+customer_context:
+  [
+    '{{customerName}} is a fictional analytics firm.',
+    'Its finance team requested a daily export.',
+  ]
+brief:
+  {
+    severity: medium,
+    business_impact: Finance cannot locate the expected export before reconciliation.,
+    symptom_variants:
+      [
+        A requested daily export looks empty in the local morning.,
+        A team reports that records from the prior evening are missing.,
+      ],
+  }
+root_cause:
+  {
+    id: utc-range-interpretation,
+    category: expectation,
+    explanation: The request used local dates while export boundaries are UTC.,
+  }
+hypotheses:
+  - {
+      id: utc-range-interpretation,
+      label: The date range was interpreted with UTC boundaries.,
+    }
+  - { id: export-job-failure, label: The export job omitted records. }
+  - { id: storage-delay, label: Export storage is delayed. }
+evidence:
+  - {
+      id: requested-range,
+      tool: audit_log,
+      cost: 1,
+      relevance: supporting,
+      unlock_after: [],
+      content:
+        {
+          kind: key_value,
+          values:
+            {
+              requested_dates: 'October 10 local',
+              request_time: 'October 11 08:10 local',
+            },
+        },
+      explanation: The request names a local calendar date.,
+    }
+  - {
+      id: exported-timestamps,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [requested-range],
+      content:
+        {
+          kind: table,
+          columns: [record, exported_at],
+          rows:
+            [{ record: Late transaction, exported_at: 'October 10 19:05 UTC' }],
+        },
+      explanation: The supposedly missing record is inside the UTC export range.,
+    }
+  - {
+      id: user-timezone,
+      tool: user_scope,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [exported-timestamps],
+      content:
+        {
+          kind: key_value,
+          values:
+            {
+              requester_timezone: 'UTC+05:30',
+              late_transaction_local: 'October 11 00:35',
+            },
+        },
+      explanation: Local midnight differs from the export boundary.,
+    }
+  - {
+      id: date-filter-help,
+      tool: role_configuration,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [user-timezone],
+      content:
+        {
+          kind: text,
+          text: Export date filters use UTC from 00:00 through 23:59.,
+        },
+      explanation: Documented behavior matches the observed result.,
+    }
+red_herrings: { pool: [], choose: 0 }
+remediation:
+  {
+    choices:
+      [
+        {
+          id: clarify-range,
+          label: Re-run using the needed UTC range,
+          phase: immediate,
+          quality: correct,
+          explanation: It selects the intended records.,
+        },
+        {
+          id: show-timezone-help,
+          label: Show timezone boundaries in export requests,
+          phase: prevention,
+          quality: correct,
+          explanation: It makes behavior explicit.,
+        },
+      ],
+  }
+communication:
+  {
+    choices:
+      [
+        {
+          id: explain-boundary,
+          message: 'We verified the export completed; the apparent gap is a local-versus-UTC date boundary, and we are preparing the requested local range now.',
+          quality: excellent,
+          explanation: It distinguishes behavior from failure.,
+        },
+        {
+          id: update-finance,
+          message: Finance records are available and we will confirm the corrected range within 20 minutes.,
+          quality: excellent,
+          explanation: It gives scope and a checkpoint.,
+        },
+      ],
+  }
+debrief:
+  {
+    root_cause_explanation: UTC export boundaries placed the late local record in a different date range.,
+    evidence_chain:
+      [requested-range, exported-timestamps, user-timezone, date-filter-help],
+    efficient_path:
+      [
+        { kind: evidence, ref: requested-range },
+        { kind: evidence, ref: exported-timestamps },
+        { kind: evidence, ref: user-timezone },
+        { kind: evidence, ref: date-filter-help },
+      ],
+    transferable_lesson: Verify expected behavior and time boundaries.,
+  }
