@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { BrowserRouter, MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
+import { scenarioCatalog } from '../../generated/scenario-catalog'
 import { DailyIncidentPage } from './DailyIncidentPage'
 import { dailyPlayableScenarios } from '../investigation/load-investigation'
 
@@ -51,9 +52,11 @@ describe('DailyIncidentPage', () => {
     ).toHaveAttribute('href', '/scenarios')
   })
 
-  it('uses only currently playable scenarios by default', () => {
-    expect(dailyPlayableScenarios.map(({ id }) => id)).toEqual(['iam-001'])
-    expect(dailyPlayableScenarios.map(({ id }) => id)).not.toContain('fnd-001')
+  it('uses every generated scenario by default', () => {
+    const playableIds = dailyPlayableScenarios.map(({ id }) => id)
+
+    expect(playableIds).toEqual(scenarioCatalog.map(({ id }) => id))
+    expect(playableIds).toEqual(expect.arrayContaining(['api-001', 'web-001']))
   })
 
   it('does not duplicate a BrowserRouter basename in the challenge link', () => {
