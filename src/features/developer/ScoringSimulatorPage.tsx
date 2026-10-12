@@ -12,11 +12,6 @@ export function ScoringSimulatorPage() {
   const scenario = scenarioCatalog.find(
     (candidate) => candidate.id === scenarioId,
   )
-  const [hypothesisId, setHypothesisId] = useState(
-    scenario?.hypotheses[0]?.id ?? '',
-  )
-  const [evidenceIds, setEvidenceIds] = useState<readonly string[]>([])
-  const [result, setResult] = useState<ScoreSimulationResult | undefined>()
 
   if (!scenario) {
     return (
@@ -30,6 +25,18 @@ export function ScoringSimulatorPage() {
       </section>
     )
   }
+
+  return <ScoringSimulatorForm key={scenario.id} scenario={scenario} />
+}
+
+function ScoringSimulatorForm({
+  scenario,
+}: {
+  scenario: (typeof scenarioCatalog)[number]
+}) {
+  const [hypothesisId, setHypothesisId] = useState(scenario.hypotheses[0].id)
+  const [evidenceIds, setEvidenceIds] = useState<readonly string[]>([])
+  const [result, setResult] = useState<ScoreSimulationResult | undefined>()
 
   const toggleEvidence = (evidenceId: string) => {
     setEvidenceIds((current) =>
