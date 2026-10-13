@@ -5,6 +5,9 @@ URL-safe canonical ID such as `api-002`; the filename must be that exact ID plus
 `.yaml` (`content/scenarios/api-002.yaml`). Scenario IDs follow
 `[a-z][a-z0-9]*-NNN` and must be unique across the collection, ignoring case.
 
+The current library contains 12 scenarios across six domains: `fundamentals`,
+`api`, `identity`, `integrations`, `data`, and `browser`.
+
 ## Authoring contract
 
 Every scenario has these top-level sections:
@@ -126,6 +129,15 @@ problems it can collect in one run. Generation validates first, then updates the
 committed deterministic public index and typed playable catalog only when their
 content changes. Both CI and `npm run build` reject invalid scenarios; CI also
 rejects generated-artifact drift.
+
+## Local authoring aids
+
+After validating and generating, authors can inspect a scenario directly at
+`/developer/inspector/<scenario-id>?seed=<seed>` and simulate its authored
+diagnosis and evidence scoring at `/developer/scoring/<scenario-id>`. These
+routes are static, local authoring aids. They are intentionally absent from
+public navigation and are not access-control or security boundaries; there is
+no backend or server-side protection for them.
 
 An aggregated failure looks like this:
 

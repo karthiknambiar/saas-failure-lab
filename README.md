@@ -2,13 +2,14 @@
 
 SaaS Failure Lab is a free, open-source troubleshooting simulator for people who work between customers and engineering. It will teach evidence-driven investigation across APIs, identity, integrations, data flows, and browser behavior without requiring access to a real production environment.
 
-> Current status: Milestone 9 — browser-local completed-run sharing and daily incidents
+> Current status: Milestone 10 — expanded authored scenario library and local authoring tools
 
-The repository includes two fictional YAML scenarios, a validated content
-contract, and deterministic generated browse and playable catalogs. IAM-001 is
-playable from the landing page or scenario browser through a completed-run
-debrief. Accepted IAM-001 completions are saved as versioned, browser-local
-progress records; FND-001 remains authored but unavailable for play.
+The repository includes 12 fictional YAML scenarios across six domains, a
+validated content contract, and deterministic generated browse and playable
+catalogs. IAM-001 is playable from the landing page or scenario browser through
+a completed-run debrief. Accepted IAM-001 completions are saved as versioned,
+browser-local progress records; other authored scenarios remain unavailable for
+play until their own investigation UI is available.
 
 ## Product constraints
 
@@ -64,6 +65,14 @@ all YAML first and updates both `src/generated/scenario-index.json` and
 `src/generated/scenario-catalog.ts` only when their deterministic output
 changes.
 
+Scenario authors should validate YAML before generating artifacts:
+
+```sh
+npm run validate:scenarios
+npm run generate:scenarios
+git diff -- src/generated/scenario-index.json src/generated/scenario-catalog.ts
+```
+
 ## Static build and deployment
 
 `npm run build` emits portable static assets to `dist/`. The output contains only HTML, CSS, and JavaScript and requires no runtime server beyond ordinary static hosting. It also creates `dist/404.html` so clean React Router paths can recover on GitHub Pages.
@@ -81,7 +90,13 @@ The current application routes are:
 - `/progress` — completed-run dashboard, achievements, and local reset flow
 - `/how-it-works` — investigation-loop explanation
 - `/daily` — UTC-selected daily incident with a seeded challenge link
+- `/developer/inspector/<scenario-id>?seed=<seed>` — local Scenario Inspector
+- `/developer/scoring/<scenario-id>` — local Scoring Simulator
 - any unknown path — not-found recovery page
+
+The developer routes are deliberately unlinked local authoring aids. They are
+absent from the public navigation and are not access-control or security
+boundaries; the static application has no server protection for those URLs.
 
 Milestone 9 retains deterministic diagnosis submission and the 70/30 score: 70
 points for the submitted diagnosis and 30 for bookmarked evidence. Only after a
@@ -125,7 +140,8 @@ The deployment workflow supplies the repository base path to Vite. React Router 
 - [Milestone 5 investigation UI design](docs/superpowers/specs/2026-09-28-milestone-5-investigation-ui-design.md)
 - [Milestone 5 implementation plan](docs/superpowers/plans/2026-09-30-milestone-5-investigation-ui.md)
 
-The product design documents define a milestone-based roadmap. Milestone 9 adds
-completed-only, browser-local sharing and UTC daily-incident selection to
-deterministic IAM-001 diagnosis scoring; later milestones add remediation,
-communication, and more playable scenarios.
+The product design documents define a milestone-based roadmap. Milestone 10
+expands the authored library to 12 scenarios across API, identity,
+integrations, data, browser, and fundamentals domains, and adds unlinked local
+authoring aids for inspection and score simulation. Later milestones add
+remediation, communication, and more playable scenarios.

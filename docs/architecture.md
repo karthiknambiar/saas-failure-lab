@@ -21,9 +21,10 @@ social API dependency, remote AI dependency, or secret credential path.
 
 ## Product boundaries
 
-Milestone 9 implements the IAM-001 investigation, diagnosis result,
+Milestone 10 implements the IAM-001 investigation, diagnosis result,
 completed-only debrief, browser-local completed-run progress, completed-only
-sharing, and UTC daily incidents while preserving the
+sharing, UTC daily incidents, and a 12-scenario authored library across six
+domains while preserving the
 static architecture:
 
 ```text
@@ -49,9 +50,9 @@ static HTML, CSS, and JavaScript in dist/
 ```
 
 The content pipeline, deterministic composer, investigation engine, accessible
-IAM-001 UI, deterministic scoring, completed-only debrief, and versioned
-browser-local completed-run progress are implemented. Future milestones will
-add remediation, communication, and efficiency feedback.
+IAM-001 UI, deterministic scoring, completed-only debrief, versioned
+browser-local completed-run progress, and local authoring tools are implemented.
+Future milestones will add remediation, communication, and efficiency feedback.
 
 The boundaries have clear responsibilities:
 
@@ -179,6 +180,16 @@ scenario browser and the typed catalog through the allow-listed IAM-001 loader.
 CI validates explicitly, regenerates both committed artifacts, and fails when
 either drifts from source control.
 
+### Local authoring routes
+
+The static `/developer/inspector/<scenario-id>?seed=<seed>` route renders a
+scenario's composed metadata and evidence dependencies, while
+`/developer/scoring/<scenario-id>` lets an author exercise the authored
+hypothesis and evidence score inputs. These are local authoring aids only:
+they are absent from public navigation and are not access-control or security
+boundaries. The application intentionally adds no backend or server protection
+for either URL.
+
 ### Accessibility as behavior
 
 The shell uses semantic landmarks, a skip link, active-route semantics, a native mobile navigation disclosure, labeled disabled controls, visible focus treatment, responsive reflow down to 320 CSS pixels, and reduced-motion handling. Browser tests verify keyboard navigation and mobile route access.
@@ -203,7 +214,7 @@ The deployment workflow builds on GitHub-hosted runners and publishes only `dist
 
 ## Current milestone boundary
 
-Milestone 9 makes IAM-001 playable from the landing page and scenario browser
+Milestone 10 makes IAM-001 playable from the landing page and scenario browser
 through a diagnosis result and a completed-only debrief. The static UI uses the canonical IAM-001 seed,
 engine-controlled evidence gating, safe evidence projections, bookmarks,
 hypothesis selection, an action trail, deterministic 70/30 diagnosis/evidence
@@ -219,6 +230,8 @@ not add accounts, a backend, synchronization, active-run resume, export, or
 import; static deployment remains unchanged. FND-001 and every other authored
 scenario remain unavailable for play.
 
-Remediation, communication, efficiency feedback, export/import, multi-scenario
+The library has 12 authored scenarios covering the `fundamentals`, `api`,
+`identity`, `integrations`, `data`, and `browser` domains. Remediation,
+communication, efficiency feedback, export/import, multi-scenario
 randomization, and full scenario-browser filtering remain later work. No backend
 state or synchronized persistence is part of this milestone.
