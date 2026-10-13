@@ -6,10 +6,9 @@ SaaS Failure Lab is a free, open-source troubleshooting simulator for people who
 
 The repository includes 12 fictional YAML scenarios across six domains, a
 validated content contract, and deterministic generated browse and playable
-catalogs. IAM-001 is playable from the landing page or scenario browser through
-a completed-run debrief. Accepted IAM-001 completions are saved as versioned,
-browser-local progress records; other authored scenarios remain unavailable for
-play until their own investigation UI is available.
+catalogs. Every validated generated scenario is playable from the scenario
+browser through a completed-run debrief; the landing page features IAM-001.
+Accepted completions are saved as versioned, browser-local progress records.
 
 ## Product constraints
 
@@ -85,11 +84,11 @@ GitHub Actions includes:
 The current application routes are:
 
 - `/` — product landing page
-- `/scenarios` — browse-safe scenario library with the IAM-001 entry
-- `/scenarios/iam-001` — playable canonical IAM investigation
+- `/scenarios` — browse-safe library of all validated generated scenarios
+- `/scenarios/<scenario-id>` — playable investigation for each generated scenario
 - `/progress` — completed-run dashboard, achievements, and local reset flow
 - `/how-it-works` — investigation-loop explanation
-- `/daily` — UTC-selected daily incident with a seeded challenge link
+- `/daily` — UTC-selected, seeded incident drawn from all generated scenarios
 - `/developer/inspector/<scenario-id>?seed=<seed>` — local Scenario Inspector
 - `/developer/scoring/<scenario-id>` — local Scoring Simulator
 - any unknown path — not-found recovery page
@@ -98,15 +97,16 @@ The developer routes are deliberately unlinked local authoring aids. They are
 absent from the public navigation and are not access-control or security
 boundaries; the static application has no server protection for those URLs.
 
-Milestone 9 retains deterministic diagnosis submission and the 70/30 score: 70
-points for the submitted diagnosis and 30 for bookmarked evidence. Only after a
-completed submission, a learner can replace the result view with a debrief that
+Milestone 9 introduced deterministic diagnosis submission and the 70/30 score:
+70 points for the submitted diagnosis and 30 for bookmarked evidence. In
+Milestone 10, every validated generated scenario uses that investigation flow.
+Only after a completed submission, a learner can replace the result view with a debrief that
 shows the diagnosis and evidence score components, the authored root-cause
 explanation, evidence chain, seed-selected red herrings, efficient path, and
 transferable lesson. Completed-run progress is stored only in the current
 browser and can be reset from the Progress dashboard. Active investigations are
-not resumed; export/import, sharing, remediation, communication, efficiency
-scoring and multi-scenario play remain deferred. After completion, learners can
+not resumed; export/import, remediation, communication, and efficiency scoring
+remain deferred. After completion, learners can
 share a browser-local link to the same generated variation, copy it, or download
 a local Canvas-rendered share card. These controls carry no solution, evidence,
 or debrief data; unavailable browser capabilities show a safe fallback message.
@@ -144,4 +144,4 @@ The product design documents define a milestone-based roadmap. Milestone 10
 expands the authored library to 12 scenarios across API, identity,
 integrations, data, browser, and fundamentals domains, and adds unlinked local
 authoring aids for inspection and score simulation. Later milestones add
-remediation, communication, and more playable scenarios.
+remediation, communication, and efficiency feedback.
