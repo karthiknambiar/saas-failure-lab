@@ -41,7 +41,7 @@ export function serializeScenarioIndex(
 }
 
 function serializeScenarioIndexEntry(entry: ScenarioIndexEntry): string {
-  const concepts = `[${entry.concepts.map(JSON.stringify).join(', ')}]`
+  const concepts = `[${entry.concepts.map((concept) => JSON.stringify(concept)).join(', ')}]`
   const conceptsLine = `    "concepts": ${concepts}`
   const serializedConcepts =
     conceptsLine.length <= 80
