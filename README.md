@@ -144,15 +144,19 @@ for the owner-only enablement and review steps.
 - [Deployment guide](docs/deployment.md)
 - [Release checklist](docs/release-checklist.md)
 
-## Planned documentation screenshots
+## Product screenshots
 
-These paths are reserved for future local PNG screenshots. They are references
-only in this milestone; image files will be added and validated separately.
+The public, static product states below were captured from the production-style
+Pages preview. They use only fictional scenario data and do not include a
+debrief, answer key, progress history, or browser-personal data.
 
-- `docs/media/landing.png`
-- `docs/media/scenario-browser.png`
-- `docs/media/investigation.png`
-- `docs/media/completed-share.png`
+![SaaS Failure Lab landing page](docs/media/landing.png)
+
+![SaaS Failure Lab scenario browser](docs/media/scenario-browser.png)
+
+![SaaS Failure Lab IAM investigation](docs/media/investigation.png)
+
+![SaaS Failure Lab completed run sharing controls](docs/media/completed-share.png)
 
 ## Architecture and planning
 

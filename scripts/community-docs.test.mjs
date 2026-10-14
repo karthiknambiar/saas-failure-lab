@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { access, readFile } from 'node:fs/promises'
+import { access, readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
 import test from 'node:test'
 import { fileURLToPath } from 'node:url'
@@ -139,6 +139,47 @@ test('links public release documentation and future product screenshots from the
       readme.includes(futureScreenshot),
       `README references ${futureScreenshot}`,
     )
+  }
+})
+
+test('publishes readable, local screenshots for the four public product states', async () => {
+  const readme = await readRepositoryFile('README.md')
+  const screenshots = [
+    {
+      file: 'docs/media/landing.png',
+      alt: 'SaaS Failure Lab landing page',
+    },
+    {
+      file: 'docs/media/scenario-browser.png',
+      alt: 'SaaS Failure Lab scenario browser',
+    },
+    {
+      file: 'docs/media/investigation.png',
+      alt: 'SaaS Failure Lab IAM investigation',
+    },
+    {
+      file: 'docs/media/completed-share.png',
+      alt: 'SaaS Failure Lab completed run sharing controls',
+    },
+  ]
+
+  for (const screenshot of screenshots) {
+    const screenshotStat = await stat(
+      path.join(repositoryRoot, screenshot.file),
+    )
+    assert.ok(screenshotStat.size > 0, `${screenshot.file} is nonempty`)
+    assert.ok(
+      readme.includes(`![${screenshot.alt}](${screenshot.file})`),
+      `README embeds ${screenshot.file} with descriptive alt text`,
+    )
+  }
+
+  const flowGif = path.join(repositoryRoot, 'docs/media/flow.gif')
+  try {
+    const flowGifStat = await stat(flowGif)
+    assert.ok(flowGifStat.size <= 5 * 1024 * 1024, 'flow.gif is at most 5 MB')
+  } catch (error) {
+    assert.equal(error.code, 'ENOENT')
   }
 })
 
