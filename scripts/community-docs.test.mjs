@@ -50,15 +50,61 @@ test('publishes the M11 community documentation files with safe contribution gui
 })
 
 test('keeps conduct, security, and issue routing private and safe', async () => {
-  const [conduct, security, issueConfig] = await Promise.all([
-    readRepositoryFile('CODE_OF_CONDUCT.md'),
-    readRepositoryFile('SECURITY.md'),
-    readRepositoryFile('.github/ISSUE_TEMPLATE/config.yml'),
-  ])
+  const [conduct, security, issueConfig, bugTemplate, scenarioTemplate] =
+    await Promise.all([
+      readRepositoryFile('CODE_OF_CONDUCT.md'),
+      readRepositoryFile('SECURITY.md'),
+      readRepositoryFile('.github/ISSUE_TEMPLATE/config.yml'),
+      readRepositoryFile('.github/ISSUE_TEMPLATE/bug_report.yml'),
+      readRepositoryFile('.github/ISSUE_TEMPLATE/scenario_proposal.yml'),
+    ])
 
   assert.match(conduct, /private GitHub security advisory/i)
+  assert.match(conduct, /may remove content or participation/i)
+  assert.match(conduct, /Report conduct concerns/i)
   assert.match(security, /private GitHub security advisory/i)
   assert.match(security, /do not open a public issue/i)
+  assert.match(security, /do not\s+publish a response-time or remediation SLA/i)
+  assert.match(issueConfig, /blank_issues_enabled: false/)
   assert.match(issueConfig, /private GitHub security advisory/i)
   assert.match(issueConfig, /Do not include credentials/)
+  assert.match(
+    bugTemplate,
+    /id: sensitive-data[\s\S]*?I confirm this report contains no credentials[\s\S]*?required: true/,
+  )
+  assert.match(bugTemplate, /Sensitive-data confirmation/)
+  assert.match(bugTemplate, /Do not include credentials/)
+  assert.match(
+    scenarioTemplate,
+    /id: fictional-sanitized[\s\S]*?I confirm this proposal is fictional, sanitized[\s\S]*?required: true/,
+  )
+  assert.match(scenarioTemplate, /Fictional and sanitized confirmation/)
+  assert.match(scenarioTemplate, /Do not include credentials/)
+  assert.match(scenarioTemplate, /fictional and sanitized/i)
+})
+
+test('documents contributor checks, review expectations, and roadmap scope', async () => {
+  const [contributing, pullRequestTemplate, roadmap] = await Promise.all([
+    readRepositoryFile('CONTRIBUTING.md'),
+    readRepositoryFile('.github/pull_request_template.md'),
+    readRepositoryFile('ROADMAP.md'),
+  ])
+
+  assert.match(contributing, /npm install/)
+  assert.match(contributing, /npm test/)
+  assert.match(contributing, /npm run lint/)
+  assert.match(contributing, /npm run format:check/)
+  assert.match(contributing, /YAML/)
+  assert.match(contributing, /npm run validate:scenarios/)
+  assert.match(contributing, /npm run generate:scenarios/)
+  assert.match(contributing, /Review expectations/)
+  assert.match(pullRequestTemplate, /npm test/)
+  assert.match(pullRequestTemplate, /npm run validate:scenarios/)
+  assert.match(pullRequestTemplate, /updated relevant documentation/i)
+  assert.match(pullRequestTemplate, /Do not include credentials/)
+  assert.match(roadmap, /M0–M10[\s\S]*complete/i)
+  assert.match(roadmap, /M11: community release preparation/i)
+  assert.match(roadmap, /optional AI extension contract/i)
+  assert.match(roadmap, /provider-agnostic/i)
+  assert.match(roadmap, /noncommitments/i)
 })

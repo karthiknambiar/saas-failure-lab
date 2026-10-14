@@ -15,7 +15,9 @@ can change as the learning content and community evolve.
 
 ## Exploring
 
-- M12: an optional adapter contract for integrations that can preserve the core
-  experience without making an adapter a requirement.
+- M12: an optional AI extension contract: a provider-agnostic future AI
+  adapter/relay design that can preserve the core experience without making AI
+  functionality or an adapter a requirement. This is a noncommitment, not an
+  integration promise.
 
 Future ideas are noncommitments, not promises of scope, timing, or support.
