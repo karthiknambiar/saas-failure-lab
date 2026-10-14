@@ -106,5 +106,11 @@ test('documents contributor checks, review expectations, and roadmap scope', asy
   assert.match(roadmap, /M11: community release preparation/i)
   assert.match(roadmap, /optional AI extension contract/i)
   assert.match(roadmap, /provider-agnostic/i)
+  assert.match(roadmap, /AI\s+adapter\/relay design/i)
+  assert.match(
+    roadmap,
+    /without making AI\s+functionality or an adapter a requirement/i,
+  )
+  assert.match(roadmap, /not an\s+integration promise/i)
   assert.match(roadmap, /noncommitments/i)
 })
