@@ -1,0 +1,51 @@
+name: Bug report
+description: Report a reproducible problem in CSM Failure Lab. Do not include credentials or sensitive data.
+title: '[Bug]: '
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the lab. Do not include credentials, API keys,
+        access tokens, personal data, private URLs, or customer information.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Give the smallest safe sequence that reproduces the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser, operating system, Node.js version, and relevant app version.
+    validations:
+      required: true
+  - type: checkboxes
+    id: sensitive-data
+    attributes:
+      label: Sensitive-data confirmation
+      description: Do not include credentials or other sensitive data.
+      options:
+        - label: I confirm this report contains no credentials, secrets, or personal data.
+          required: true

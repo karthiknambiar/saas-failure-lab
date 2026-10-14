@@ -1,0 +1,53 @@
+name: Scenario proposal
+description: Propose a safe, fictional learning scenario. Do not include credentials or sensitive data.
+title: '[Scenario]: '
+labels: [scenario]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Proposals must be fictional and sanitized. Do not include credentials,
+        API keys, access tokens, personal data, private URLs, or customer details.
+  - type: textarea
+    id: symptom
+    attributes:
+      label: Symptom
+      description: What would a learner observe?
+    validations:
+      required: true
+  - type: textarea
+    id: root-cause
+    attributes:
+      label: Root cause
+      description: What underlying condition explains the symptom?
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Which safe, invented signals let a learner reason toward the cause?
+    validations:
+      required: true
+  - type: textarea
+    id: wrong-assumptions
+    attributes:
+      label: Wrong assumptions
+      description: Which plausible assumptions should the scenario challenge?
+    validations:
+      required: true
+  - type: textarea
+    id: lesson
+    attributes:
+      label: Lesson
+      description: What reusable lesson should the learner take away?
+    validations:
+      required: true
+  - type: checkboxes
+    id: fictional-sanitized
+    attributes:
+      label: Fictional and sanitized confirmation
+      description: Do not include credentials or sensitive information.
+      options:
+        - label: I confirm this proposal is fictional, sanitized, and contains no credentials or personal data.
+          required: true
