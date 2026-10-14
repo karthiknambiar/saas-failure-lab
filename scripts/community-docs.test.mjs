@@ -114,3 +114,58 @@ test('documents contributor checks, review expectations, and roadmap scope', asy
   assert.match(roadmap, /not an\s+integration promise/i)
   assert.match(roadmap, /noncommitments/i)
 })
+
+test('links public release documentation and future product screenshots from the README', async () => {
+  const readme = await readRepositoryFile('README.md')
+
+  for (const link of [
+    'CONTRIBUTING.md',
+    'SECURITY.md',
+    'CODE_OF_CONDUCT.md',
+    'ROADMAP.md',
+    'docs/deployment.md',
+  ]) {
+    assert.ok(readme.includes(`](${link})`), `README links to ${link}`)
+  }
+
+  for (const futureScreenshot of [
+    'docs/media/landing.png',
+    'docs/media/scenario-browser.png',
+    'docs/media/investigation.png',
+    'docs/media/completed-share.png',
+  ]) {
+    assert.ok(
+      readme.includes(futureScreenshot),
+      `README references ${futureScreenshot}`,
+    )
+  }
+})
+
+test('documents the owner-approved GitHub Pages deployment and release review', async () => {
+  const [deployment, checklist] = await Promise.all([
+    readRepositoryFile('docs/deployment.md'),
+    readRepositoryFile('docs/release-checklist.md'),
+  ])
+
+  assert.match(deployment, /npm run build/)
+  assert.match(deployment, /main/)
+  assert.match(deployment, /GitHub Pages settings/i)
+  assert.match(deployment, /VITE_BASE_PATH/)
+  assert.ok(
+    deployment.includes(
+      'VITE_BASE_PATH: /${{ github.event.repository.name }}/',
+    ),
+  )
+  assert.match(deployment, /owner approval/i)
+  assert.match(deployment, /do not deploy during this\s+milestone/i)
+  assert.match(deployment, /npm ci/)
+  assert.match(deployment, /workflow_dispatch/)
+  assert.match(deployment, /dist/)
+  assert.match(deployment, /review.*URL/i)
+
+  assert.match(checklist, /CI.*green/i)
+  assert.match(checklist, /public docs.*media/i)
+  assert.match(checklist, /confidential/i)
+  assert.match(checklist, /owner[\s\S]*Pages/i)
+  assert.match(checklist, /first deployment.*URL/i)
+})
