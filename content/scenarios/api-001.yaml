@@ -1,0 +1,163 @@
+id: api-001
+version: 1
+title: Nightly connection stops authenticating
+domain: api
+difficulty: intermediate
+estimated_minutes: 9
+learning:
+  {
+    concepts: [connectivity, authentication],
+    objectives: [Separate connectivity from authentication.],
+  }
+variations:
+  {
+    customer_names: [Redwood Ledger, Quartz Harbor, Mossline Retail],
+    timestamp_offsets_minutes: [0, 22],
+  }
+customer_context:
+  [
+    '{{customerName}} is a fictional retailer.',
+    'A nightly reconciliation job is delayed.',
+  ]
+brief:
+  {
+    severity: high,
+    business_impact: Nightly reconciliation cannot finish before finance opens.,
+    symptom_variants:
+      [
+        The nightly job reaches its destination but is rejected.,
+        A scheduled integration stopped after a recent maintenance window.,
+      ],
+  }
+root_cause:
+  {
+    id: rotated-credential-revoked,
+    category: credential,
+    explanation: The job continued using a credential revoked during rotation.,
+  }
+hypotheses:
+  - {
+      id: rotated-credential-revoked,
+      label: The scheduled job uses a revoked rotated credential.,
+    }
+  - { id: network-route-blocked, label: Network connectivity is blocked. }
+  - { id: destination-outage, label: The destination service is unavailable. }
+evidence:
+  - {
+      id: http-response,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [],
+      content:
+        {
+          kind: key_value,
+          values: { result: '401 unauthorized', response_time: 'normal' },
+        },
+      explanation: A response proves the network path works.,
+    }
+  - {
+      id: network-connectivity,
+      tool: service_status,
+      cost: 1,
+      relevance: supporting,
+      unlock_after: [http-response],
+      content:
+        {
+          kind: status,
+          state: operational,
+          detail: Scheduled connectivity is healthy.,
+        },
+      explanation: Shared connectivity is healthy.,
+    }
+  - {
+      id: credential-audit,
+      tool: audit_log,
+      cost: 2,
+      relevance: critical,
+      unlock_after: [network-connectivity],
+      content:
+        {
+          kind: timeline,
+          events:
+            [
+              {
+                time: { day_offset: -1, clock: '18:00' },
+                event: Previous job credential was revoked during rotation.,
+              },
+            ],
+        },
+      explanation: The active job identifier matches the revoked credential.,
+    }
+  - {
+      id: previous-success,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [credential-audit],
+      content:
+        {
+          kind: timeline,
+          events:
+            [
+              {
+                time: { day_offset: -2, clock: '02:00' },
+                event: Job succeeded before credential rotation.,
+              },
+            ],
+        },
+      explanation: The timing aligns with rotation.,
+    }
+red_herrings: { pool: [], choose: 0 }
+remediation:
+  {
+    choices:
+      [
+        {
+          id: update-credential,
+          label: Update the job with the approved active credential,
+          phase: immediate,
+          quality: correct,
+          explanation: It restores authentication without changing network settings.,
+        },
+        {
+          id: rotation-validation,
+          label: Validate scheduled jobs after credential rotation,
+          phase: prevention,
+          quality: correct,
+          explanation: It catches stale credentials.,
+        },
+      ],
+  }
+communication:
+  {
+    choices:
+      [
+        {
+          id: auth-update,
+          message: We confirmed the job can reach the service and are replacing a rotated credential; the next update is in 20 minutes.,
+          quality: excellent,
+          explanation: It separates connectivity from authentication.,
+        },
+        {
+          id: finance-update,
+          message: The issue is limited to the nightly reconciliation job and recovery is in progress.,
+          quality: excellent,
+          explanation: It gives verified scope.,
+        },
+      ],
+  }
+debrief:
+  {
+    root_cause_explanation: A revoked credential caused authentication rejection while connectivity stayed healthy.,
+    evidence_chain:
+      [http-response, network-connectivity, credential-audit, previous-success],
+    efficient_path:
+      [
+        { kind: evidence, ref: http-response },
+        { kind: evidence, ref: network-connectivity },
+        { kind: evidence, ref: credential-audit },
+        { kind: evidence, ref: previous-success },
+      ],
+    transferable_lesson: Separate connectivity from authentication.,
+  }

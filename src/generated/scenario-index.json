@@ -1,5 +1,41 @@
 [
   {
+    "id": "api-001",
+    "title": "Nightly connection stops authenticating",
+    "domain": "api",
+    "difficulty": "intermediate",
+    "estimatedMinutes": 9,
+    "concepts": ["authentication", "connectivity"],
+    "symptomSummary": "The nightly job reaches its destination but is rejected."
+  },
+  {
+    "id": "api-002",
+    "title": "Read succeeds but write is refused",
+    "domain": "api",
+    "difficulty": "intermediate",
+    "estimatedMinutes": 9,
+    "concepts": ["permissions", "scopes"],
+    "symptomSummary": "Invoice viewing works while creation is refused."
+  },
+  {
+    "id": "api-004",
+    "title": "Retry loop grows the backlog",
+    "domain": "api",
+    "difficulty": "advanced",
+    "estimatedMinutes": 10,
+    "concepts": ["rate-limits", "retries"],
+    "symptomSummary": "A sync receives repeated capacity responses and falls further behind."
+  },
+  {
+    "id": "dat-003",
+    "title": "Pipeline counts do not match",
+    "domain": "data",
+    "difficulty": "intermediate",
+    "estimatedMinutes": 10,
+    "concepts": ["pipeline-counts", "validation"],
+    "symptomSummary": "The destination count is lower after an otherwise completed import."
+  },
+  {
     "id": "fnd-001",
     "title": "One user cannot access a feature",
     "domain": "fundamentals",
@@ -13,6 +49,24 @@
     "symptomSummary": "One finance analyst cannot open forecasting, although teammates can use it normally."
   },
   {
+    "id": "fnd-002",
+    "title": "Did the deployment cause the failure?",
+    "domain": "fundamentals",
+    "difficulty": "intermediate",
+    "estimatedMinutes": 9,
+    "concepts": ["causal-reasoning", "timeline-analysis"],
+    "symptomSummary": "A workflow began failing after a deployment was announced."
+  },
+  {
+    "id": "fnd-003",
+    "title": "Export appears to be missing",
+    "domain": "fundamentals",
+    "difficulty": "beginner",
+    "estimatedMinutes": 8,
+    "concepts": ["expected-behavior", "time-boundaries"],
+    "symptomSummary": "A requested daily export looks empty in the local morning."
+  },
+  {
     "id": "iam-001",
     "title": "Login works, feature does not",
     "domain": "identity",
@@ -24,5 +78,41 @@
       "role-based-access-control"
     ],
     "symptomSummary": "Two finance users can sign in, but reporting shows an access-denied message."
+  },
+  {
+    "id": "iam-004",
+    "title": "New users are not provisioned",
+    "domain": "identity",
+    "difficulty": "intermediate",
+    "estimatedMinutes": 9,
+    "concepts": ["authentication", "provisioning"],
+    "symptomSummary": "New accounts are not appearing while existing sign-in remains normal."
+  },
+  {
+    "id": "int-001",
+    "title": "Duplicate customer records arrive",
+    "domain": "integrations",
+    "difficulty": "intermediate",
+    "estimatedMinutes": 9,
+    "concepts": ["delivery", "idempotency"],
+    "symptomSummary": "Customer records appear twice after delayed deliveries."
+  },
+  {
+    "id": "int-004",
+    "title": "Retry storm overwhelms the queue",
+    "domain": "integrations",
+    "difficulty": "advanced",
+    "estimatedMinutes": 10,
+    "concepts": ["backoff", "queues"],
+    "symptomSummary": "A provider capacity response is followed by a rapidly growing queue."
+  },
+  {
+    "id": "web-001",
+    "title": "One browser profile cannot load settings",
+    "domain": "browser",
+    "difficulty": "beginner",
+    "estimatedMinutes": 8,
+    "concepts": ["client-comparison", "local-state"],
+    "symptomSummary": "Settings fail in one browser profile while another profile succeeds."
   }
 ]

@@ -20,6 +20,11 @@ describe('application routes', () => {
     ['/daily', 'Daily Incident'],
     ['/progress', 'Your progress'],
     ['/how-it-works', 'How an investigation works'],
+    [
+      '/developer/inspector/api-001?seed=lab-api-001-v1-a1b2c3d4',
+      'Scenario Inspector',
+    ],
+    ['/developer/scoring/iam-001', 'Scoring Simulator'],
   ])('renders %s', (path, heading) => {
     renderRoute(path)
 
@@ -65,17 +70,34 @@ describe('application routes', () => {
     )
   })
 
-  it('lists the IAM scenario without inactive filter controls', () => {
+  it('lists generated catalog scenarios without inactive filter controls', () => {
     renderRoute('/scenarios')
 
     expect(
       screen.getByRole('link', { name: 'Open Login works, feature does not' }),
     ).toHaveAttribute('href', '/scenarios/iam-001')
+    expect(
+      screen.getByRole('link', { name: /Open .*nightly/i }),
+    ).toHaveAttribute('href', '/scenarios/api-001')
+    expect(
+      screen.getByRole('link', { name: /Open .*browser/i }),
+    ).toHaveAttribute('href', '/scenarios/web-001')
     expect(screen.queryByRole('searchbox')).not.toBeInTheDocument()
-    expect(screen.getByText('Identity')).toBeInTheDocument()
-    expect(screen.getByText('Beginner')).toBeInTheDocument()
+    expect(screen.getAllByText('Identity').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Beginner').length).toBeGreaterThan(0)
     expect(
       screen.getByText('Authentication vs authorization'),
     ).toBeInTheDocument()
+  })
+
+  it('does not expose developer tools in primary navigation', () => {
+    renderRoute('/')
+
+    expect(
+      screen.queryByRole('link', { name: /Inspector/i }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('link', { name: /Simulator/i }),
+    ).not.toBeInTheDocument()
   })
 })

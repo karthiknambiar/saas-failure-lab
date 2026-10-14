@@ -196,9 +196,9 @@ test('recovers safely for unknown and unavailable investigation routes', async (
   await page.getByRole('link', { name: 'Browse scenarios' }).click()
   await expect(page).toHaveURL(/\/scenarios$/)
 
-  await page.goto('/failure-lab/scenarios/fnd-001')
+  await page.goto('/failure-lab/scenarios/unavailable-001')
   await expect(
-    page.getByRole('heading', { name: 'This scenario is not playable yet.' }),
+    page.getByRole('heading', { name: 'This scenario could not be found.' }),
   ).toBeVisible()
   await expect(page.getByText(/score|correct answer/i)).toHaveCount(0)
 })

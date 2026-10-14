@@ -1,0 +1,148 @@
+id: api-002
+version: 1
+title: Read succeeds but write is refused
+domain: api
+difficulty: intermediate
+estimated_minutes: 9
+learning:
+  {
+    concepts: [permissions, scopes],
+    objectives: [Distinguish a valid credential from sufficient permission.],
+  }
+variations:
+  {
+    customer_names: [Atlas Orchard, Sable Works, Fernbridge],
+    timestamp_offsets_minutes: [0, 18],
+  }
+customer_context:
+  [
+    '{{customerName}} is a fictional billing platform.',
+    'Its staff need to create invoices.',
+  ]
+brief:
+  {
+    severity: high,
+    business_impact: Staff can review invoices but cannot create new ones.,
+    symptom_variants:
+      [
+        Invoice viewing works while creation is refused.,
+        A recent integration can read data but cannot submit updates.,
+      ],
+  }
+root_cause:
+  {
+    id: invoice-write-scope-missing,
+    category: authorization,
+    explanation: The credential is valid but lacks the invoice write permission.,
+  }
+hypotheses:
+  - {
+      id: invoice-write-scope-missing,
+      label: The credential lacks invoice write permission.,
+    }
+  - { id: expired-credential, label: The credential is expired. }
+  - { id: invoice-service-outage, label: Invoice processing is unavailable. }
+evidence:
+  - {
+      id: read-request-success,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [],
+      content: { kind: key_value, values: { read_result: '200 success' } },
+      explanation: Successful reads establish a valid credential.,
+    }
+  - {
+      id: write-request-forbidden,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [read-request-success],
+      content: { kind: key_value, values: { write_result: '403 forbidden' } },
+      explanation: The failure is permission-specific.,
+    }
+  - {
+      id: token-scopes,
+      tool: role_configuration,
+      cost: 2,
+      relevance: critical,
+      unlock_after: [write-request-forbidden],
+      content:
+        {
+          kind: key_value,
+          values:
+            { scopes: 'invoice.read, customer.read', invoice_write: 'missing' },
+        },
+      explanation: The required write scope is absent.,
+    }
+  - {
+      id: endpoint-permission,
+      tool: role_configuration,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [token-scopes],
+      content:
+        {
+          kind: text,
+          text: Invoice creation requires invoice.write permission.,
+        },
+      explanation: The endpoint requirement confirms the diagnosis.,
+    }
+red_herrings: { pool: [], choose: 0 }
+remediation:
+  {
+    choices:
+      [
+        {
+          id: grant-write-scope,
+          label: Grant the approved invoice write permission,
+          phase: immediate,
+          quality: correct,
+          explanation: It adds only required access.,
+        },
+        {
+          id: scope-review,
+          label: Validate requested endpoint permissions during setup,
+          phase: prevention,
+          quality: correct,
+          explanation: It prevents under-scoped credentials.,
+        },
+      ],
+  }
+communication:
+  {
+    choices:
+      [
+        {
+          id: permission-update,
+          message: We confirmed reading is healthy and are correcting a missing invoice permission for the write action.,
+          quality: excellent,
+          explanation: It accurately narrows the fault.,
+        },
+        {
+          id: billing-update,
+          message: Invoice creation is the only affected operation; we will update you within 20 minutes.,
+          quality: excellent,
+          explanation: It provides scope and timing.,
+        },
+      ],
+  }
+debrief:
+  {
+    root_cause_explanation: The valid credential could read but lacked the write permission.,
+    evidence_chain:
+      [
+        read-request-success,
+        write-request-forbidden,
+        token-scopes,
+        endpoint-permission,
+      ],
+    efficient_path:
+      [
+        { kind: evidence, ref: read-request-success },
+        { kind: evidence, ref: write-request-forbidden },
+        { kind: evidence, ref: token-scopes },
+        { kind: evidence, ref: endpoint-permission },
+      ],
+    transferable_lesson: A valid credential can still lack permission.,
+  }

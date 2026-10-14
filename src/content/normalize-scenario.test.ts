@@ -106,12 +106,14 @@ describe('normalizeScenarioIndex', () => {
 })
 
 describe('serializeScenarioIndex', () => {
-  it('emits stable two-space JSON with one trailing newline and no hidden fields', () => {
+  it('emits stable Prettier-compatible JSON with one trailing newline and no hidden fields', () => {
     const entries = normalizeScenarioIndex([document('iam-001')])
 
     const serialized = serializeScenarioIndex(entries)
 
-    expect(serialized).toBe(`${JSON.stringify(entries, null, 2)}\n`)
+    expect(serialized).toContain(
+      '"concepts": ["authentication-vs-authorization"]',
+    )
     expect(serialized.endsWith('\n')).toBe(true)
     expect(serialized.endsWith('\n\n')).toBe(false)
     for (const hidden of [

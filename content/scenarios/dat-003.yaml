@@ -1,0 +1,155 @@
+id: dat-003
+version: 1
+title: Pipeline counts do not match
+domain: data
+difficulty: intermediate
+estimated_minutes: 10
+learning:
+  {
+    concepts: [pipeline-counts, validation],
+    objectives: [Trace counts across pipeline stages.],
+  }
+variations:
+  {
+    customer_names: [Tidal Books, Ashford Goods, Indigo Grove],
+    timestamp_offsets_minutes: [0, 33],
+  }
+customer_context:
+  [
+    '{{customerName}} is a fictional distributor.',
+    'Its team is reconciling a destination import.',
+  ]
+brief:
+  {
+    severity: high,
+    business_impact: Reconciliation is delayed because destination records are fewer than source records.,
+    symptom_variants:
+      [
+        The destination count is lower after an otherwise completed import.,
+        The import reports completion but records are missing downstream.,
+      ],
+  }
+root_cause:
+  {
+    id: destination-required-field-missing,
+    category: validation,
+    explanation: Records without a required destination field were rejected during validation.,
+  }
+hypotheses:
+  - {
+      id: destination-required-field-missing,
+      label: A required destination field is missing.,
+    }
+  - { id: source-extract-loss, label: The source extract omitted records. }
+  - { id: processing-capacity, label: The processor stopped early. }
+evidence:
+  - {
+      id: source-count,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [],
+      content: { kind: key_value, values: { source_records: '1000' } },
+      explanation: Source contains the expected count.,
+    }
+  - {
+      id: ingestion-count,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [source-count],
+      content: { kind: key_value, values: { ingested_records: '1000' } },
+      explanation: Ingestion preserved all source records.,
+    }
+  - {
+      id: processing-count,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [ingestion-count],
+      content: { kind: key_value, values: { processed_records: '1000' } },
+      explanation: Processing did not lose records.,
+    }
+  - {
+      id: validation-failures,
+      tool: audit_log,
+      cost: 2,
+      relevance: critical,
+      unlock_after: [processing-count],
+      content:
+        {
+          kind: table,
+          columns: [reason, count],
+          rows: [{ reason: 'destination_region missing', count: '37' }],
+        },
+      explanation: Validation accounts for the discrepancy.,
+    }
+  - {
+      id: destination-count,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [validation-failures],
+      content: { kind: key_value, values: { destination_records: '963' } },
+      explanation: Destination count matches accepted records.,
+    }
+red_herrings: { pool: [], choose: 0 }
+remediation:
+  {
+    choices:
+      [
+        {
+          id: supply-field,
+          label: Supply the required destination field and replay rejected records,
+          phase: immediate,
+          quality: correct,
+          explanation: It restores the missing valid records.,
+        },
+        {
+          id: stage-count-monitor,
+          label: Monitor stage counts and validation reasons,
+          phase: prevention,
+          quality: correct,
+          explanation: It exposes future discrepancies.,
+        },
+      ],
+  }
+communication:
+  {
+    choices:
+      [
+        {
+          id: data-update,
+          message: We traced all source records through processing and identified a required destination field rejecting a limited set; we are replaying them safely.,
+          quality: excellent,
+          explanation: It provides evidence-based scope and action.,
+        },
+        {
+          id: reconcile-update,
+          message: The count difference is accounted for by validation and we will confirm reconciliation within 20 minutes.,
+          quality: excellent,
+          explanation: It sets a concrete expectation.,
+        },
+      ],
+  }
+debrief:
+  {
+    root_cause_explanation: Thirty-seven records failed destination validation because a required field was absent.,
+    evidence_chain:
+      [
+        source-count,
+        ingestion-count,
+        processing-count,
+        validation-failures,
+        destination-count,
+      ],
+    efficient_path:
+      [
+        { kind: evidence, ref: source-count },
+        { kind: evidence, ref: ingestion-count },
+        { kind: evidence, ref: processing-count },
+        { kind: evidence, ref: validation-failures },
+        { kind: evidence, ref: destination-count },
+      ],
+    transferable_lesson: Trace counts across pipeline stages.,
+  }

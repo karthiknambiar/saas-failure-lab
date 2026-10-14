@@ -202,7 +202,7 @@ test('loads the global UTC Daily Incident beneath the static base path', async (
   const start = page.getByRole('link', { name: 'Start daily incident' })
   await expect(start).toHaveAttribute(
     'href',
-    /\/failure-lab\/scenarios\/iam-001\?seed=/,
+    /\/failure-lab\/scenarios\/(?:api-001|api-002|api-004|dat-003|fnd-001|fnd-002|fnd-003|iam-001|iam-004|int-001|int-004|web-001)\?seed=/,
   )
 })
 

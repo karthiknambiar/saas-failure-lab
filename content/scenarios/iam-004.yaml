@@ -1,0 +1,154 @@
+id: iam-004
+version: 1
+title: New users are not provisioned
+domain: identity
+difficulty: intermediate
+estimated_minutes: 9
+learning:
+  {
+    concepts: [provisioning, authentication],
+    objectives: [Separate SSO health from provisioning health.],
+  }
+variations:
+  {
+    customer_names: [Pine Harbor, Golden Thread, Lakefront Tools],
+    timestamp_offsets_minutes: [0, 24],
+  }
+customer_context:
+  [
+    '{{customerName}} is a fictional manufacturer.',
+    'New starters need access before a shift change.',
+  ]
+brief:
+  {
+    severity: high,
+    business_impact: New employees cannot begin work while existing staff continue to sign in.,
+    symptom_variants:
+      [
+        New accounts are not appearing while existing sign-in remains normal.,
+        Onboarding requests are rejected even though SSO works.,
+      ],
+  }
+root_cause:
+  {
+    id: required-provisioning-attribute-unmapped,
+    category: provisioning,
+    explanation: A required employee attribute was not mapped into provisioning.,
+  }
+hypotheses:
+  - {
+      id: required-provisioning-attribute-unmapped,
+      label: A required provisioning attribute is unmapped.,
+    }
+  - { id: sso-outage, label: SSO is unavailable. }
+  - { id: directory-delay, label: The directory is delayed. }
+evidence:
+  - {
+      id: authentication-health,
+      tool: identity_events,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [],
+      content:
+        {
+          kind: status,
+          state: operational,
+          detail: Existing users complete SSO successfully.,
+        },
+      explanation: Authentication is healthy.,
+    }
+  - {
+      id: provisioning-response,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [authentication-health],
+      content:
+        {
+          kind: key_value,
+          values:
+            { response: 'validation rejected', affected: 'new users only' },
+        },
+      explanation: The failure is in provisioning.,
+    }
+  - {
+      id: validation-error,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [provisioning-response],
+      content:
+        { kind: text, text: Required field costCenter was not supplied. },
+      explanation: The validation identifies the missing field.,
+    }
+  - {
+      id: attribute-map,
+      tool: role_configuration,
+      cost: 2,
+      relevance: critical,
+      unlock_after: [validation-error],
+      content:
+        {
+          kind: key_value,
+          values: { employee_id: mapped, cost_center: unmapped },
+        },
+      explanation: The required attribute mapping is absent.,
+    }
+red_herrings: { pool: [], choose: 0 }
+remediation:
+  {
+    choices:
+      [
+        {
+          id: map-cost-center,
+          label: Map the approved required attribute and retry affected users,
+          phase: immediate,
+          quality: correct,
+          explanation: It repairs provisioning input.,
+        },
+        {
+          id: mapping-validation,
+          label: Validate required mappings after identity changes,
+          phase: prevention,
+          quality: correct,
+          explanation: It prevents silent onboarding failures.,
+        },
+      ],
+  }
+communication:
+  {
+    choices:
+      [
+        {
+          id: provision-update,
+          message: Existing SSO is healthy; the issue affects new-user provisioning and we are restoring a required attribute mapping.,
+          quality: excellent,
+          explanation: It separates the two systems.,
+        },
+        {
+          id: starter-update,
+          message: The impact is limited to new starters and we will confirm restored provisioning within 20 minutes.,
+          quality: excellent,
+          explanation: It provides scope and timing.,
+        },
+      ],
+  }
+debrief:
+  {
+    root_cause_explanation: 'SSO remained healthy, but provisioning lacked a required attribute mapping.',
+    evidence_chain:
+      [
+        authentication-health,
+        provisioning-response,
+        validation-error,
+        attribute-map,
+      ],
+    efficient_path:
+      [
+        { kind: evidence, ref: authentication-health },
+        { kind: evidence, ref: provisioning-response },
+        { kind: evidence, ref: validation-error },
+        { kind: evidence, ref: attribute-map },
+      ],
+    transferable_lesson: SSO and provisioning are separate.,
+  }

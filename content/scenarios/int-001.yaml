@@ -1,0 +1,167 @@
+id: int-001
+version: 1
+title: Duplicate customer records arrive
+domain: integrations
+difficulty: intermediate
+estimated_minutes: 9
+learning:
+  {
+    concepts: [idempotency, delivery],
+    objectives: [Apply idempotency to at-least-once delivery.],
+  }
+variations:
+  {
+    customer_names: [Morrow Cart, Fieldstone Market, Nova Pantry],
+    timestamp_offsets_minutes: [0, 29],
+  }
+customer_context:
+  [
+    '{{customerName}} is a fictional commerce company.',
+    'Its support team sees duplicate customer records.',
+  ]
+brief:
+  {
+    severity: medium,
+    business_impact: Support must pause customer updates while duplicates are reviewed.,
+    symptom_variants:
+      [
+        Customer records appear twice after delayed deliveries.,
+        A downstream record is created more than once for the same event.,
+      ],
+  }
+root_cause:
+  {
+    id: webhook-duplicate-not-idempotent,
+    category: integration,
+    explanation: Repeated delivery was processed without an idempotency check.,
+  }
+hypotheses:
+  - {
+      id: webhook-duplicate-not-idempotent,
+      label: Repeated delivery lacks idempotent handling.,
+    }
+  - { id: source-duplicate-event, label: The source created duplicate events. }
+  - { id: database-corruption, label: Storage corrupted customer records. }
+evidence:
+  - {
+      id: delivery-identifiers,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [],
+      content:
+        {
+          kind: table,
+          columns: [delivery_id, event_id],
+          rows:
+            [
+              { delivery_id: 'd-100', event_id: 'e-42' },
+              { delivery_id: 'd-101', event_id: 'e-42' },
+            ],
+        },
+      explanation: Two deliveries reference one event.,
+    }
+  - {
+      id: first-delivery-timeout,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [delivery-identifiers],
+      content:
+        {
+          kind: timeline,
+          events:
+            [
+              {
+                time: { day_offset: 0, clock: '10:01' },
+                event: First delivery timed out before acknowledgement.,
+              },
+            ],
+        },
+      explanation: A timeout reasonably triggered redelivery.,
+    }
+  - {
+      id: duplicate-records,
+      tool: user_scope,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [first-delivery-timeout],
+      content:
+        {
+          kind: table,
+          columns: [event_id, records_created],
+          rows: [{ event_id: 'e-42', records_created: '2' }],
+        },
+      explanation: Both deliveries created records.,
+    }
+  - {
+      id: idempotency-store,
+      tool: role_configuration,
+      cost: 2,
+      relevance: critical,
+      unlock_after: [duplicate-records],
+      content:
+        {
+          kind: key_value,
+          values: { processed_event_store: absent, duplicate_check: disabled },
+        },
+      explanation: No idempotency guard exists.,
+    }
+red_herrings: { pool: [], choose: 0 }
+remediation:
+  {
+    choices:
+      [
+        {
+          id: deduplicate-event,
+          label: Deduplicate affected records and store processed event identifiers,
+          phase: immediate,
+          quality: correct,
+          explanation: It repairs current data and prevents repeats.,
+        },
+        {
+          id: idempotency-test,
+          label: Test redelivery behavior before releases,
+          phase: prevention,
+          quality: correct,
+          explanation: It proves safe retries.,
+        },
+      ],
+  }
+communication:
+  {
+    choices:
+      [
+        {
+          id: delivery-update,
+          message: We confirmed repeat delivery of the same event created duplicates and are reconciling only the affected records.,
+          quality: excellent,
+          explanation: It states cause and scope.,
+        },
+        {
+          id: support-update,
+          message: Customer updates are paused for the impacted records while we complete a safe reconciliation.,
+          quality: excellent,
+          explanation: It gives operational guidance.,
+        },
+      ],
+  }
+debrief:
+  {
+    root_cause_explanation: 'A timeout caused a normal redelivery, which created another record because processing was not idempotent.',
+    evidence_chain:
+      [
+        delivery-identifiers,
+        first-delivery-timeout,
+        duplicate-records,
+        idempotency-store,
+      ],
+    efficient_path:
+      [
+        { kind: evidence, ref: delivery-identifiers },
+        { kind: evidence, ref: first-delivery-timeout },
+        { kind: evidence, ref: duplicate-records },
+        { kind: evidence, ref: idempotency-store },
+      ],
+    transferable_lesson: At-least-once delivery requires idempotency.,
+  }

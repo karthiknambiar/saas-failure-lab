@@ -250,12 +250,20 @@ describe('InvestigationPage', () => {
   })
 
   it.each([
-    ['/scenarios/fnd-001', 'This scenario is not playable yet.'],
-    ['/scenarios/missing-001', 'This scenario could not be found.'],
-  ])('recovers unavailable routes at %s', (path, message) => {
+    ['/scenarios/api-001', 'Nightly connection stops authenticating'],
+    ['/scenarios/web-001', 'One browser profile cannot load settings'],
+  ])('loads generated public routes at %s', (path, title) => {
     renderInvestigation(path)
 
-    expect(screen.getByText(message)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: title })).toBeInTheDocument()
+  })
+
+  it('recovers an unknown route', () => {
+    renderInvestigation('/scenarios/missing-001')
+
+    expect(
+      screen.getByText('This scenario could not be found.'),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'Browse scenarios' }),
     ).toHaveAttribute('href', '/scenarios')

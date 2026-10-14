@@ -35,5 +35,34 @@ export function normalizeScenarioIndex(
 export function serializeScenarioIndex(
   entries: readonly ScenarioIndexEntry[],
 ): string {
-  return `${JSON.stringify(entries, null, 2)}\n`
+  if (entries.length === 0) return '[]\n'
+
+  return `[\n${entries.map(serializeScenarioIndexEntry).join(',\n')}\n]\n`
+}
+
+function serializeScenarioIndexEntry(entry: ScenarioIndexEntry): string {
+  const concepts = `[${entry.concepts.map((concept) => JSON.stringify(concept)).join(', ')}]`
+  const conceptsLine = `    "concepts": ${concepts}`
+  const serializedConcepts =
+    conceptsLine.length <= 80
+      ? [conceptsLine]
+      : JSON.stringify(entry.concepts, null, 2)
+          .split('\n')
+          .map((line, index) =>
+            index === 0 ? `    "concepts": ${line}` : `    ${line}`,
+          )
+
+  return [
+    '  {',
+    `    "id": ${JSON.stringify(entry.id)},`,
+    `    "title": ${JSON.stringify(entry.title)},`,
+    `    "domain": ${JSON.stringify(entry.domain)},`,
+    `    "difficulty": ${JSON.stringify(entry.difficulty)},`,
+    `    "estimatedMinutes": ${entry.estimatedMinutes},`,
+    ...serializedConcepts.map((line, index) =>
+      index === serializedConcepts.length - 1 ? `${line},` : line,
+    ),
+    `    "symptomSummary": ${JSON.stringify(entry.symptomSummary)}`,
+    '  }',
+  ].join('\n')
 }

@@ -21,9 +21,10 @@ social API dependency, remote AI dependency, or secret credential path.
 
 ## Product boundaries
 
-Milestone 9 implements the IAM-001 investigation, diagnosis result,
+Milestone 10 implements generated-scenario investigations, diagnosis results,
 completed-only debrief, browser-local completed-run progress, completed-only
-sharing, and UTC daily incidents while preserving the
+sharing, UTC daily incidents, and a 12-scenario authored library across six
+domains while preserving the
 static architecture:
 
 ```text
@@ -49,9 +50,10 @@ static HTML, CSS, and JavaScript in dist/
 ```
 
 The content pipeline, deterministic composer, investigation engine, accessible
-IAM-001 UI, deterministic scoring, completed-only debrief, and versioned
-browser-local completed-run progress are implemented. Future milestones will
-add remediation, communication, and efficiency feedback.
+UI for every generated scenario, deterministic scoring, completed-only debrief,
+versioned browser-local completed-run progress, and local authoring tools are
+implemented.
+Future milestones will add remediation, communication, and efficiency feedback.
 
 The boundaries have clear responsibilities:
 
@@ -94,28 +96,29 @@ no state-management or persistence library is required.
 
 ### Generated playable catalog
 
-Milestone 5 generates a typed scenario catalog after the same collection-wide
-validation used by the public index. The browser does not parse YAML or fetch
-scenario data at runtime. The scenario browser reads only the safe index; the
-investigation feature uses the full catalog but renders evidence exclusively
-through active-investigation selectors.
+The typed scenario catalog is generated after the same collection-wide
+validation used by the public index and contains every validated generated
+scenario. The browser does not parse YAML or fetch scenario data at runtime.
+The scenario browser reads only the safe index; the parameterized investigation
+route loads each catalogued scenario and renders evidence exclusively through
+active-investigation selectors.
 
 ### Feature-local investigation controller
 
 React owns transient selection, tab, error, and ready-checkpoint state.
-Investigation facts remain in the framework-independent engine. IAM-001 uses a
-canonical seed, refresh starts a new session, and in-progress runs are never
-persisted or resumed. An accepted terminal diagnosis records only its completed
-run in browser-local progress.
+Investigation facts remain in the framework-independent engine. Each generated
+scenario uses a canonical seed, refresh starts a new session, and in-progress
+runs are never persisted or resumed. An accepted terminal diagnosis records
+only its completed run in browser-local progress.
 
 ### Presentation ownership
 
 The application shell owns skip navigation, global navigation, the main landmark, and the footer. Pages own product-specific composition. Small primitives own native button/link semantics, cards, badges, and evidence-panel structure. CSS tokens and global styles own shared visual decisions, responsive behavior, focus treatment, and reduced-motion handling.
 
-The scenario browser imports the generated browse-safe index and exposes the
-IAM-001 card. Its landing-page and browser entry points lead to the playable
-IAM-001 investigation; other authored scenarios remain unavailable until their
-own UI milestone.
+The scenario browser imports the generated browse-safe index and exposes every
+validated generated scenario. Each card links to the parameterized playable
+investigation route. The landing page features IAM-001; it does not limit the
+public catalog or route availability.
 
 ### Framework-independent domain behavior
 
@@ -168,16 +171,26 @@ hypotheses, evidence and relevance, red herrings, remediation answers,
 communication quality, and debrief content. Full validated definitions are
 composer inputs and are not emitted into the public browser index. The typed
 playable catalog is generated from those same validated documents and is used
-only by the IAM-001 route loader; presentation renders active evidence through
-safe selectors rather than solution fields.
+by the parameterized scenario route loader; presentation renders active
+evidence through safe selectors rather than solution fields.
 
 `npm run validate:scenarios` fails on parsing, schema, or semantic errors.
 `npm run generate:scenarios` validates before writing the index and catalog.
 Production builds run that command as a pre-build validation gate before
 TypeScript and Vite. The application imports the browse-safe index for the
-scenario browser and the typed catalog through the allow-listed IAM-001 loader.
-CI validates explicitly, regenerates both committed artifacts, and fails when
-either drifts from source control.
+scenario browser and the typed catalog through the parameterized scenario
+loader. CI validates explicitly, regenerates both committed artifacts, and
+fails when either drifts from source control.
+
+### Local authoring routes
+
+The static `/developer/inspector/<scenario-id>?seed=<seed>` route renders a
+scenario's composed metadata and evidence dependencies, while
+`/developer/scoring/<scenario-id>` lets an author exercise the authored
+hypothesis and evidence score inputs. These are local authoring aids only:
+they are absent from public navigation and are not access-control or security
+boundaries. The application intentionally adds no backend or server protection
+for either URL.
 
 ### Accessibility as behavior
 
@@ -203,9 +216,10 @@ The deployment workflow builds on GitHub-hosted runners and publishes only `dist
 
 ## Current milestone boundary
 
-Milestone 9 makes IAM-001 playable from the landing page and scenario browser
-through a diagnosis result and a completed-only debrief. The static UI uses the canonical IAM-001 seed,
-engine-controlled evidence gating, safe evidence projections, bookmarks,
+Milestone 10 makes every validated generated scenario playable from the scenario
+browser through a diagnosis result and a completed-only debrief; the landing
+page features IAM-001. Each scenario uses its canonical seed, engine-controlled
+evidence gating, safe evidence projections, bookmarks,
 hypothesis selection, an action trail, deterministic 70/30 diagnosis/evidence
 scoring, and a responsive three-region workspace that changes to accessible
 controlled tabs at 820px and below. The result exposes the learner's submitted
@@ -216,9 +230,11 @@ are stored in a versioned browser-local record and feed the Progress dashboard,
 where they survive reloads and can be reset after confirmation. Invalid or
 unknown stored values recover to an empty dashboard without crashing. This does
 not add accounts, a backend, synchronization, active-run resume, export, or
-import; static deployment remains unchanged. FND-001 and every other authored
-scenario remain unavailable for play.
+import; static deployment remains unchanged. The Daily Incident selector draws
+from every generated scenario and produces a seeded playable route.
 
-Remediation, communication, efficiency feedback, export/import, multi-scenario
+The library has 12 authored scenarios covering the `fundamentals`, `api`,
+`identity`, `integrations`, `data`, and `browser` domains. Remediation,
+communication, efficiency feedback, export/import, multi-scenario
 randomization, and full scenario-browser filtering remain later work. No backend
 state or synchronized persistence is part of this milestone.

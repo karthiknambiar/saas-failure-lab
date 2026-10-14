@@ -1,0 +1,164 @@
+id: web-001
+version: 1
+title: One browser profile cannot load settings
+domain: browser
+difficulty: beginner
+estimated_minutes: 8
+learning:
+  {
+    concepts: [client-comparison, local-state],
+    objectives:
+      [Compare client environments before changing a healthy service.],
+  }
+variations:
+  {
+    customer_names: [Frostline Studio, Amber Desk, Clover Point],
+    timestamp_offsets_minutes: [0, 21],
+  }
+customer_context:
+  [
+    '{{customerName}} is a fictional design agency.',
+    'One administrator cannot open workspace settings.',
+  ]
+brief:
+  {
+    severity: medium,
+    business_impact: One administrator is delayed while other administrators continue configuration work.,
+    symptom_variants:
+      [
+        Settings fail in one browser profile while another profile succeeds.,
+        One administrator sees an outdated settings screen after a recent change.,
+      ],
+  }
+root_cause:
+  {
+    id: stale-local-configuration,
+    category: client-state,
+    explanation: A browser profile retained an obsolete local configuration.,
+  }
+hypotheses:
+  - {
+      id: stale-local-configuration,
+      label: The affected browser profile has stale local configuration.,
+    }
+  - { id: server-settings-outage, label: The settings service is unavailable. }
+  - { id: account-permission-loss, label: The administrator lost permission. }
+evidence:
+  - {
+      id: server-request-result,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [],
+      content:
+        {
+          kind: key_value,
+          values:
+            { server_result: '200 success', affected_account: 'authorized' },
+        },
+      explanation: The server accepts the request.,
+    }
+  - {
+      id: clean-profile-comparison,
+      tool: user_scope,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [server-request-result],
+      content:
+        {
+          kind: table,
+          columns: [profile, result],
+          rows:
+            [
+              { profile: Affected browser profile, result: 'fails' },
+              { profile: Clean browser profile, result: 'loads' },
+            ],
+        },
+      explanation: The failure is profile-specific.,
+    }
+  - {
+      id: local-state-timestamp,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [clean-profile-comparison],
+      content:
+        {
+          kind: key_value,
+          values:
+            { local_state_saved: '30 days ago', latest_release: '2 days ago' },
+        },
+      explanation: Local state predates the release.,
+    }
+  - {
+      id: cached-config-version,
+      tool: role_configuration,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [local-state-timestamp],
+      content:
+        {
+          kind: key_value,
+          values:
+            { affected_profile: 'config v4', current_service: 'config v5' },
+        },
+      explanation: The profile uses an obsolete cached configuration.,
+    }
+red_herrings: { pool: [], choose: 0 }
+remediation:
+  {
+    choices:
+      [
+        {
+          id: refresh-local-state,
+          label: Clear the obsolete local configuration and reload settings,
+          phase: immediate,
+          quality: correct,
+          explanation: It refreshes only the affected client state.,
+        },
+        {
+          id: cache-versioning,
+          label: Version and expire client configuration safely,
+          phase: prevention,
+          quality: correct,
+          explanation: It prevents stale settings from persisting.,
+        },
+      ],
+  }
+communication:
+  {
+    choices:
+      [
+        {
+          id: browser-update,
+          message: The service and account are healthy; the issue is isolated to one browser profile and we are refreshing its local configuration.,
+          quality: excellent,
+          explanation: It states verified scope and action.,
+        },
+        {
+          id: admin-update,
+          message: 'Other administrators remain able to work, and we will confirm the affected profile recovery within 20 minutes.',
+          quality: excellent,
+          explanation: It communicates impact and timing.,
+        },
+      ],
+  }
+debrief:
+  {
+    root_cause_explanation: A stale browser configuration conflicted with the current service configuration.,
+    evidence_chain:
+      [
+        server-request-result,
+        clean-profile-comparison,
+        local-state-timestamp,
+        cached-config-version,
+      ],
+    efficient_path:
+      [
+        { kind: evidence, ref: server-request-result },
+        { kind: evidence, ref: clean-profile-comparison },
+        { kind: evidence, ref: local-state-timestamp },
+        { kind: evidence, ref: cached-config-version },
+      ],
+    transferable_lesson: Compare client environments.,
+  }

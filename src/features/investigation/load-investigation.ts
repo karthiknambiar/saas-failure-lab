@@ -5,7 +5,7 @@ import type { ScenarioInstance } from '../../engine/scenario-instance'
 import { parseChallengeSeed } from '../../sharing/share-link'
 import type { DailyPlayableScenario } from '../../sharing/daily-incident'
 
-const playableScenarioIds = new Set(['iam-001'])
+const playableScenarioIds = new Set(scenarioCatalog.map(({ id }) => id))
 
 export const dailyPlayableScenarios: readonly DailyPlayableScenario[] =
   scenarioCatalog

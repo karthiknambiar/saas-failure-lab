@@ -1,0 +1,156 @@
+id: api-004
+version: 1
+title: Retry loop grows the backlog
+domain: api
+difficulty: advanced
+estimated_minutes: 10
+learning:
+  {
+    concepts: [rate-limits, retries],
+    objectives: [Recognize when retries amplify a failure.],
+  }
+variations:
+  {
+    customer_names: [Ivory Junction, Blue Heron, Copperline],
+    timestamp_offsets_minutes: [0, 31],
+  }
+customer_context:
+  [
+    '{{customerName}} is a fictional operations service.',
+    'A scheduled sync is falling behind.',
+  ]
+brief:
+  {
+    severity: high,
+    business_impact: New work is delayed while the sync backlog grows.,
+    symptom_variants:
+      [
+        A sync receives repeated capacity responses and falls further behind.,
+        Operators report more attempts but less completed work.,
+      ],
+  }
+root_cause:
+  {
+    id: immediate-429-retries,
+    category: retry-policy,
+    explanation: Immediate retries repeatedly hit a rate limit and create more load.,
+  }
+hypotheses:
+  - {
+      id: immediate-429-retries,
+      label: Immediate retries are amplifying the rate limit.,
+    }
+  - { id: provider-outage, label: The provider is unavailable. }
+  - { id: worker-failure, label: Workers are offline. }
+evidence:
+  - {
+      id: rate-limit-response,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [],
+      content: { kind: key_value, values: { result: '429', completed: '0' } },
+      explanation: The service is rate limiting requests.,
+    }
+  - {
+      id: retry-after,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [rate-limit-response],
+      content:
+        {
+          kind: key_value,
+          values: { retry_after: '60 seconds', observed_retry: 'immediate' },
+        },
+      explanation: The client ignores the requested wait.,
+    }
+  - {
+      id: request-frequency,
+      tool: audit_log,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [retry-after],
+      content:
+        {
+          kind: table,
+          columns: [minute, attempts],
+          rows:
+            [
+              { minute: '09:00', attempts: '12' },
+              { minute: '09:01', attempts: '240' },
+            ],
+        },
+      explanation: Attempts spike after retries begin.,
+    }
+  - {
+      id: backlog-trend,
+      tool: service_status,
+      cost: 1,
+      relevance: critical,
+      unlock_after: [request-frequency],
+      content:
+        {
+          kind: table,
+          columns: [minute, backlog],
+          rows:
+            [
+              { minute: '09:00', backlog: '40' },
+              { minute: '09:10', backlog: '690' },
+            ],
+        },
+      explanation: The retry loop grows backlog.,
+    }
+red_herrings: { pool: [], choose: 0 }
+remediation:
+  {
+    choices:
+      [
+        {
+          id: backoff-retries,
+          label: Honor Retry-After with bounded backoff,
+          phase: immediate,
+          quality: correct,
+          explanation: It reduces pressure and permits recovery.,
+        },
+        {
+          id: retry-guardrails,
+          label: Add retry rate and backlog guardrails,
+          phase: prevention,
+          quality: correct,
+          explanation: It detects amplification early.,
+        },
+      ],
+  }
+communication:
+  {
+    choices:
+      [
+        {
+          id: retry-update,
+          message: We found the sync is retrying too quickly against a capacity limit and are applying backoff now.,
+          quality: excellent,
+          explanation: It explains verified behavior and action.,
+        },
+        {
+          id: backlog-update,
+          message: The backlog is limited to this sync and we will report recovery progress within 20 minutes.,
+          quality: excellent,
+          explanation: It gives scope and a checkpoint.,
+        },
+      ],
+  }
+debrief:
+  {
+    root_cause_explanation: Immediate retries turned a capacity response into a growing backlog.,
+    evidence_chain:
+      [rate-limit-response, retry-after, request-frequency, backlog-trend],
+    efficient_path:
+      [
+        { kind: evidence, ref: rate-limit-response },
+        { kind: evidence, ref: retry-after },
+        { kind: evidence, ref: request-frequency },
+        { kind: evidence, ref: backlog-trend },
+      ],
+    transferable_lesson: Retries can amplify failure.,
+  }
