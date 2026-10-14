@@ -84,7 +84,8 @@ git diff -- src/generated/scenario-index.json src/generated/scenario-catalog.ts
 GitHub Actions includes:
 
 - CI for formatting, linting, unit tests, production builds, and browser smoke tests
-- a GitHub Pages workflow triggered from `main` or manually after owner approval
+- a GitHub Pages workflow triggered by pushes to `main` or manual dispatch;
+  releases follow the repository's owner-approval governance policy
 
 The current application routes are:
 

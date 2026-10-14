@@ -124,6 +124,7 @@ test('links public release documentation and future product screenshots from the
     'CODE_OF_CONDUCT.md',
     'ROADMAP.md',
     'docs/deployment.md',
+    'docs/release-checklist.md',
   ]) {
     assert.ok(readme.includes(`](${link})`), `README links to ${link}`)
   }
@@ -149,7 +150,7 @@ test('documents the owner-approved GitHub Pages deployment and release review', 
 
   assert.match(deployment, /npm run build/)
   assert.match(deployment, /main/)
-  assert.match(deployment, /GitHub Pages settings/i)
+  assert.match(deployment, /GitHub Pages\s+settings/i)
   assert.match(deployment, /VITE_BASE_PATH/)
   assert.ok(
     deployment.includes(
