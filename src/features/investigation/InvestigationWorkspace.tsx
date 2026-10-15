@@ -90,6 +90,7 @@ export function InvestigationWorkspace({
           <h2 id="tools-title">Investigation tools</h2>
           <EvidenceToolList
             evidence={controller.evidenceViews}
+            hasBudget={instance.scenario.investigation_budget !== undefined}
             selectedEvidenceId={controller.selectedEvidenceId}
             onOpen={controller.openEvidence}
             onSelect={controller.selectEvidence}

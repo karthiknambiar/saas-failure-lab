@@ -2,7 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
-import { InvestigationPage } from './InvestigationPage'
+import { InvestigationPage, PlayableInvestigation } from './InvestigationPage'
+import { loadInvestigationScenario } from './load-investigation'
 
 function renderWorkspace() {
   const rendered = render(
@@ -12,6 +13,21 @@ function renderWorkspace() {
       </Routes>
     </MemoryRouter>,
   )
+  fireEvent.click(screen.getByRole('button', { name: 'Begin investigation' }))
+  return rendered
+}
+
+function iamInstance() {
+  const loaded = loadInvestigationScenario('iam-001')
+  if (!loaded.available) throw new Error('Expected IAM-001 to be available')
+  return loaded.instance
+}
+
+function renderBudgetedWorkspace() {
+  const instance = structuredClone(iamInstance())
+  instance.scenario.investigation_budget = 5
+
+  const rendered = render(<PlayableInvestigation instance={instance} />)
   fireEvent.click(screen.getByRole('button', { name: 'Begin investigation' }))
   return rendered
 }
@@ -62,7 +78,9 @@ describe('InvestigationWorkspace', () => {
       screen.getByRole('button', { name: /authentication events.*locked/i }),
     ).toBeDisabled()
     fireEvent.click(
-      screen.getByRole('button', { name: /open affected user scope.*cost 1/i }),
+      screen.getByRole('button', {
+        name: /open affected user scope.*effort 1/i,
+      }),
     )
 
     expect(
@@ -70,7 +88,7 @@ describe('InvestigationWorkspace', () => {
     ).toHaveFocus()
     expect(
       screen.getByRole('button', {
-        name: /open authentication events.*cost 2/i,
+        name: /open authentication events.*effort 2/i,
       }),
     ).toBeEnabled()
     expect(
@@ -82,14 +100,16 @@ describe('InvestigationWorkspace', () => {
   it('only renders selected opened evidence and preserves selection across tool switches', () => {
     renderWorkspace()
     fireEvent.click(
-      screen.getByRole('button', { name: /open service status.*cost 1/i }),
+      screen.getByRole('button', { name: /open service status.*effort 1/i }),
     )
     expect(
       screen.getByText(/reporting and identity services are healthy/i),
     ).toBeVisible()
 
     fireEvent.click(
-      screen.getByRole('button', { name: /open affected user scope.*cost 1/i }),
+      screen.getByRole('button', {
+        name: /open affected user scope.*effort 1/i,
+      }),
     )
     expect(screen.getByRole('table')).toBeVisible()
     expect(
@@ -111,7 +131,7 @@ describe('InvestigationWorkspace', () => {
       screen.queryByRole('button', { name: /bookmark/i }),
     ).not.toBeInTheDocument()
     fireEvent.click(
-      screen.getByRole('button', { name: /open service status.*cost 1/i }),
+      screen.getByRole('button', { name: /open service status.*effort 1/i }),
     )
 
     fireEvent.click(
@@ -132,7 +152,7 @@ describe('InvestigationWorkspace', () => {
   it('does not render hidden evidence content or solution metadata', () => {
     const { container } = renderWorkspace()
     fireEvent.click(
-      screen.getByRole('button', { name: /open service status.*cost 1/i }),
+      screen.getByRole('button', { name: /open service status.*effort 1/i }),
     )
     const serialized = container.textContent ?? ''
 
@@ -166,12 +186,32 @@ describe('InvestigationWorkspace', () => {
     ).not.toBeVisible()
 
     fireEvent.click(
-      screen.getByRole('button', { name: /open service status.*cost 1/i }),
+      screen.getByRole('button', { name: /open service status.*effort 1/i }),
     )
     expect(screen.getByRole('tab', { name: 'Evidence' })).toHaveAttribute(
       'aria-selected',
       'true',
     )
     expect(screen.getByRole('tabpanel', { name: 'Evidence' })).toBeVisible()
+  })
+
+  it('labels available IAM evidence as effort when no investigation budget is authored', () => {
+    renderWorkspace()
+
+    const serviceStatus = screen.getByRole('button', {
+      name: 'Open Service status, effort 1',
+    })
+    expect(serviceStatus).toBeVisible()
+    expect(serviceStatus).toHaveTextContent('Effort 1')
+  })
+
+  it('labels available evidence as cost when an investigation budget is authored', () => {
+    renderBudgetedWorkspace()
+
+    const serviceStatus = screen.getByRole('button', {
+      name: 'Open Service status, cost 1',
+    })
+    expect(serviceStatus).toBeVisible()
+    expect(serviceStatus).toHaveTextContent('Cost 1')
   })
 })
