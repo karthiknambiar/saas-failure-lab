@@ -1,14 +1,16 @@
 # SaaS Failure Lab
 
-SaaS Failure Lab is a free, open-source troubleshooting simulator for people who work between customers and engineering. It will teach evidence-driven investigation across APIs, identity, integrations, data flows, and browser behavior without requiring access to a real production environment.
+SaaS Failure Lab is a free, open-source troubleshooting practice simulator for
+customer-success, support, and engineering-adjacent teams. It teaches an
+evidence-driven investigation habit without requiring access to a real
+production environment. It is not production incident-response software and
+must not be used to investigate real customer incidents.
 
-> Current status: Milestone 10 — expanded authored scenario library and local authoring tools
-
-The repository includes 12 fictional YAML scenarios across six domains, a
-validated content contract, and deterministic generated browse and playable
-catalogs. Every validated generated scenario is playable from the scenario
-browser through a completed-run debrief; the landing page features IAM-001.
-Accepted completions are saved as versioned, browser-local progress records.
+The catalog contains 12 fictional, authored scenarios across six domains:
+API, identity, integrations, data, browser, and fundamentals. Each scenario is
+validated from YAML into a deterministic browse and playable catalog. A run
+ends in a completed-run debrief, and accepted completions are saved only as
+versioned, browser-local progress records.
 
 ## Product constraints
 
@@ -24,6 +26,9 @@ Accepted completions are saved as versioned, browser-local progress records.
 - Daily incidents are selected deterministically from the UTC calendar date
 - No analytics, tracking, social API, or server-side share-card generation
 - Accessibility is a functional requirement
+
+These constraints keep the simulator deterministic, static, and privacy-first:
+there are no accounts, remote data collection, or real incident data.
 
 ## Local development
 
@@ -79,7 +84,8 @@ git diff -- src/generated/scenario-index.json src/generated/scenario-catalog.ts
 GitHub Actions includes:
 
 - CI for formatting, linting, unit tests, production builds, and browser smoke tests
-- GitHub Pages deployment from `main`
+- a GitHub Pages workflow triggered by pushes to `main` or manual dispatch;
+  releases follow the repository's owner-approval governance policy
 
 The current application routes are:
 
@@ -114,7 +120,10 @@ The Daily Incident route uses the UTC date so everyone receives the same seeded
 incident worldwide. There is no backend, account, tracking, social API, or
 remote share-card service.
 
-The deployment workflow supplies the repository base path to Vite. React Router uses that compiled base path, preserving clean navigation when the site is deployed below a domain root.
+The deployment workflow supplies the repository base path to Vite. React Router
+uses that compiled base path, preserving clean navigation when the site is
+deployed below a domain root. See the [deployment guide](docs/deployment.md)
+for the owner-only enablement and review steps.
 
 ## Test layers
 
@@ -125,6 +134,29 @@ The deployment workflow supplies the repository base path to Vite. React Router 
 - Playwright verifies the production build in Chromium through Vite's preview server.
 - CI runs scenario validation and rejects generated-index drift before building
   the static application.
+
+## Community and release documentation
+
+- [Contributing guide](CONTRIBUTING.md)
+- [Code of conduct](CODE_OF_CONDUCT.md)
+- [Security policy](SECURITY.md)
+- [Roadmap](ROADMAP.md)
+- [Deployment guide](docs/deployment.md)
+- [Release checklist](docs/release-checklist.md)
+
+## Product screenshots
+
+The public, static product states below were captured from the production-style
+Pages preview. They use only fictional scenario data and do not include a
+debrief, answer key, progress history, or browser-personal data.
+
+![SaaS Failure Lab landing page](docs/media/landing.png)
+
+![SaaS Failure Lab scenario browser](docs/media/scenario-browser.png)
+
+![SaaS Failure Lab IAM investigation](docs/media/investigation.png)
+
+![SaaS Failure Lab completed run sharing controls](docs/media/completed-share.png)
 
 ## Architecture and planning
 
