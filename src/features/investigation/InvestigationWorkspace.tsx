@@ -25,6 +25,7 @@ export function InvestigationWorkspace({
   const selectedEvidence = controller.evidenceViews.find(
     ({ id }) => id === controller.selectedEvidenceId,
   )
+  const requiresHypothesis = !controller.state.selectedHypothesisId
 
   useEffect(() => {
     if (controller.selectedEvidenceId) evidenceHeading.current?.focus()
@@ -130,11 +131,19 @@ export function InvestigationWorkspace({
             onSelectEvidence={controller.selectEvidence}
             onSelectHypothesis={controller.selectHypothesis}
           />
+          {requiresHypothesis ? (
+            <p id="diagnosis-requirement" className="diagnosis-requirement">
+              Select a hypothesis to continue.
+            </p>
+          ) : null}
           <button
             ref={readyButtonRef}
             type="button"
             className="button button--primary"
-            disabled={!controller.state.selectedHypothesisId}
+            disabled={requiresHypothesis}
+            aria-describedby={
+              requiresHypothesis ? 'diagnosis-requirement' : undefined
+            }
             onClick={() => controller.setReady(true)}
           >
             Ready to diagnose

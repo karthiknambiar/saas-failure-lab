@@ -52,9 +52,15 @@ describe('InvestigationWorkspace', () => {
       screen.queryByRole('button', { name: /bookmark/i }),
     ).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Observations' })).toBeVisible()
-    expect(
-      screen.getByRole('button', { name: 'Ready to diagnose' }),
-    ).toBeDisabled()
+    const readyButton = screen.getByRole('button', {
+      name: 'Ready to diagnose',
+    })
+    expect(readyButton).toBeDisabled()
+    expect(readyButton).toHaveAttribute(
+      'aria-describedby',
+      'diagnosis-requirement',
+    )
+    expect(screen.getByText('Select a hypothesis to continue.')).toBeVisible()
 
     fireEvent.click(
       screen.getByRole('radio', {
@@ -66,9 +72,11 @@ describe('InvestigationWorkspace', () => {
         name: /recent role change removed the affected users/i,
       }),
     ).toBeChecked()
+    expect(readyButton).toBeEnabled()
+    expect(readyButton).not.toHaveAttribute('aria-describedby')
     expect(
-      screen.getByRole('button', { name: 'Ready to diagnose' }),
-    ).toBeEnabled()
+      screen.queryByText('Select a hypothesis to continue.'),
+    ).not.toBeInTheDocument()
   })
 
   it('opens available evidence, unlocks dependencies, and marks the selected tool', () => {

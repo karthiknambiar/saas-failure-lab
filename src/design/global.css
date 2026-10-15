@@ -106,8 +106,13 @@ h3 {
   color: var(--color-accent-ink);
 }
 
-.button--primary:hover {
+.button--primary:not(:disabled):hover {
   background: var(--color-accent-strong);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
 }
 
 .button--secondary {
@@ -1179,6 +1184,12 @@ main {
   text-align: left;
   text-decoration: underline;
   text-underline-offset: 0.2em;
+}
+
+.diagnosis-requirement {
+  margin: var(--space-4) 0 var(--space-2);
+  color: var(--color-text-soft);
+  font-size: 0.9rem;
 }
 
 .ready-checkpoint,
