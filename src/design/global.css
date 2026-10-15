@@ -121,7 +121,7 @@ h3 {
   color: var(--color-text);
 }
 
-.button--secondary:hover {
+.button--secondary:not(:disabled):hover {
   border-color: var(--color-accent);
 }
 
