@@ -22,6 +22,7 @@
 ### Task 1: Add community governance and contribution documents
 
 **Files:**
+
 - Create: `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `ROADMAP.md`
 - Create: `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/scenario_proposal.yml`, `.github/ISSUE_TEMPLATE/config.yml`, `.github/pull_request_template.md`
 
@@ -55,6 +56,7 @@
 ### Task 2: Polish README and document static deployment
 
 **Files:**
+
 - Modify: `README.md`
 - Create: `docs/deployment.md`, `docs/release-checklist.md`
 
@@ -86,6 +88,7 @@
 ### Task 3: Capture and validate safe repository-owned release media
 
 **Files:**
+
 - Create: `docs/media/landing.png`, `docs/media/scenario-browser.png`, `docs/media/investigation.png`, `docs/media/completed-share.png`
 - Create optional: `docs/media/flow.gif`
 - Modify: `README.md`, `scripts/community-docs.test.mjs`
@@ -116,6 +119,7 @@
 ### Task 4: Verify release readiness without publishing
 
 **Files:**
+
 - Modify: `docs/deployment.md`, `docs/release-checklist.md` only if verification finds an inaccurate statement
 - Test: `scripts/community-docs.test.mjs`, existing CI/build/E2E suite
 
